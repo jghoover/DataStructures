@@ -238,3 +238,8 @@ class GraphTestCase(TestCase):
     @unittest.skip("skipping shortest path...graph class doesn't handle weighted edges yet")
     def test_shortest_path(self):
         pass
+
+
+@unittest.skip("Skipping Heap...not written yet")
+class HeapTestCase(TestCase):
+    pass
