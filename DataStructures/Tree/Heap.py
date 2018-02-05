@@ -7,31 +7,24 @@ class Heap(object):
     Binary Heap container class, providing min and max heaps.
     Class methods are implemented for optimal runtimes.
     Also provides heapsort and introsort algorithms.
-
-    Todo
-    ----
-    Add implementations of built-in type conversion.
-    I.e. seq, bool, etc.
-    Modify __init__ so that it takes a boolean max_heap to determine
-    if the heap is min or max.
     """
 
     @staticmethod
-    def heapsort(m):
+    def heapsort(iterable):
         """
         Heapsort comparative non-stable sorting algorithm.
-        Runtime :math:O(n \log n).
+        Runtime O(n log n).
 
         Parameters
         ----------
-        m (list): The list of objects to sort.
+        iterable (list): The list of objects to sort.
 
         Returns
         -------
-        A copy of the list `m`, sorted in nondecreasing order.
+        A copy of the list `iterable`, sorted in nondecreasing order.
         """
 
-        h = Heap(from_list=m)
+        h = Heap(from_list=iterable)
         temp = []
 
         while not h.is_empty():
@@ -43,19 +36,19 @@ class Heap(object):
         return temp
 
     @staticmethod
-    def introsort(m):
+    def introsort(iterable):
         """
         Introsort hybrid comparative non-stable sorting algorithm.
-        Runtime :math:O(n \log n).
+        Runtime O(n log n).
 
         Parameters
         ----------
-        m (list): The list of objects to be sorted.
+        iterable (list): The list of objects to be sorted.
 
         Returns
         -------
         list
-            A copy of `m`, sorted in nondecreasing order.
+            A copy of `iterable`, sorted in nondecreasing order.
 
         Notes
         -----
@@ -80,30 +73,30 @@ class Heap(object):
             Experience. Wiley. 27 (8): 983-993.
         """
 
-        def _introsort(m, maxdepth):
+        def _introsort(iterable, maxdepth):
             # base case: a list of length <= 1 is always sorted
-            if len(m) <= 1:
-                return m
+            if len(iterable) <= 1:
+                return iterable
             # insertion sort for lists of length <= 16
-            elif len(m) <= 16:
-                for k in range(1, len(m)):
-                    while 0 < k and m[k] < m[k - 1]:
-                        m[k], m[k - 1] = m[k - 1], m[k]
+            elif len(iterable) <= 16:
+                for k in range(1, len(iterable)):
+                    while 0 < k and iterable[k] < iterable[k - 1]:
+                        iterable[k], iterable[k - 1] = iterable[k - 1], iterable[k]
                         k -= 1
-                return m
+                return iterable
             # if we exceed the max recursion depth, switch to heapsort
             elif maxdepth <= 0:
-                return Heap.heapsort(m)
+                return Heap.heapsort(iterable)
             # quicksort in the regular case
             else:
-                pivot = m[0]
-                less = [x for x in m[1:] if x < pivot]
-                more = [x for x in m[1:] if x >= pivot]
+                pivot = iterable[0]
+                less = [x for x in iterable[1:] if x < pivot]
+                more = [x for x in iterable[1:] if x >= pivot]
 
                 return _introsort(less, maxdepth - 1) \
                     + [pivot] + _introsort(more, maxdepth - 1)
 
-        return _introsort(m, 2 * floor(log2(len(m))))
+        return _introsort(iterable, 2 * floor(log2(len(iterable))))
 
     def __init__(self, from_list=None, max_heap=False):
         """
@@ -149,6 +142,14 @@ class Heap(object):
             self._heapify()
 
     def __add__(self, other):
+        """
+        Merge with another heap or iterable.
+
+        Parameters
+        ----------
+        other : iterable
+            The sequence of items to be added to the heap.
+        """
         self.merge(other)
 
     # return True iff there is at least one item on the heap
@@ -161,7 +162,6 @@ class Heap(object):
     # indexing starts at 1, so only return slice starting at 1
     def __str__(self):
         return str(self._h[1:])
-
 
     def _parent(self, i):
         """
@@ -232,7 +232,7 @@ class Heap(object):
     def _bubbleup(self, i):
         """
         Recursively repair a damaged heap after an `insert()`.
-        Runtime :math:O(\log n)
+        Runtime O(\log n)
 
         Args
         ----
@@ -248,8 +248,8 @@ class Heap(object):
 
     def _bubbledown(self, i):
         """
-        Recursively repair a heap after an `extract()`.
-        Runtime :math:O(\log n)
+        Recursively repair a heap after an `extract()` or called repeatedly from `heapify()`.
+        Runtime O(log n)
 
         Args
         ----
@@ -281,16 +281,19 @@ class Heap(object):
     def _heapify(self):
         """
         Construct a heap from a list of elements.
-        Runtime :math:O(n)
+        Note that all nodes at index > parent(last) have no children,
+        and so running bubbledown on them would be wasted work.  Thus,
+        we can start bubbling down at parent(last).
+
+        Runtime O(n)
         """
         for i in range(self._parent(self._last), 0, -1):
             self._bubbledown(i)
 
-    # complexity: O(log n)
     def insert(self, item):
         """
         Add an element to the heap.
-        Runtime :math:O(\log n)
+        Runtime O(log n)
 
         Parameters
         ----------
@@ -305,15 +308,21 @@ class Heap(object):
     def extract(self):
         """
         Get the next item from the heap, removing it in the process.
+        Runtime O(log n)
 
         Returns
         -------
         object
             The root of the heap.  That is, the item with the
-            most priority, or `None` if the heap is empty.
+            most priority.
+
+        Raises
+        ------
+        IndexError
+            If the heap is empty.
         """
         if self.is_empty():
-            return None
+            raise IndexError("Cannot extract from empty heap")
 
         temp = self._h[1]
         # pull up last data to new root
@@ -327,19 +336,26 @@ class Heap(object):
     def peek(self):
         """
         Get the next item from the heap, without removing it.
+        Runtime O(1)
 
         Returns
         -------
         object
             The root of the heap.  That is, the item with the
-            most priority, or `None` if the heap is empty.
+            most priority.
+
+        Raises
+        ------
+        IndexError
+            If the heap is empty.
         """
-        return None if self.is_empty() else self._h[1]
+        if self.is_empty():
+            raise IndexError("Cannot peek from empty heap")
 
     def merge(self, other):
         """
         Add a list of elements to the heap.
-        Runtime :math:O(n)
+        Runtime O(n)
 
         Parameters
         ----------
@@ -351,12 +367,27 @@ class Heap(object):
         self._heapify()
 
     def is_empty(self):
+        """
+        Check if there are items in the heap.
+
+        Returns
+        -------
+        boolean
+            True if there are items in the heap, false otherwise.
+        """
         return self._last <= 0
 
-    def is_full(self):
-        return False
-
     def get_kind(self):
+        """
+        Check the kind of the heap (minimum or maximum).
+
+        Returns
+        -------
+        str
+            The string "Maximum" if the heap is a max heap.
+            The string "Minimum" if the heap is a min heap.
+
+        """
         return "Maximum" if self._max_heap else "Minimum"
 
 
@@ -385,6 +416,19 @@ class PriorityQueue(Heap):
             self._heapify()
 
     def __contains__(self, item):
+        """
+        Check if the heap contains `item`.
+
+        Parameters
+        ----------
+        item : object
+           The object to check for containment.
+
+        Returns
+        -------
+        boolean
+            True if `item` is in the heap, false otherwise.
+        """
         try:
             self._index[item]
         except KeyError:
@@ -393,13 +437,54 @@ class PriorityQueue(Heap):
         return True
 
     def __getitem__(self, key):
+        """
+        Obtain the priority of the item `key`.
+
+        Parameters
+        ----------
+        key : object
+           The item whose priority we are obtaining
+
+        Returns
+        -------
+        object
+            The priority of `key`
+
+        See Also
+        --------
+        get_priority : method to obtain the priority of an item
+        """
         return self.get_priority(key)
 
     # pq.insert(item, priority) == pq[item] = priority
     def __setitem__(self, key, value):
+        """
+        Parameters
+        ----------
+        key
+            The item to be inserted
+        value
+            The priority of the item being inserted
+
+        See Also
+        --------
+        insert : method to insert an item with priority
+        """
         self.insert(key, value)
 
     def __delitem__(self, key):
+        """
+        Remove the arbitrary item `key` from the heap.
+
+        Parameters
+        ----------
+        key
+            The item to be removed
+
+        See Also
+        --------
+        remove() : remove an arbitrary item in the heap
+        """
         self.remove(key)
 
     def _swap(self, i, j):
@@ -438,11 +523,18 @@ class PriorityQueue(Heap):
         index = self._index[item]
         return self._h[index][0]
 
-    # takes O(log n) time
-    # could use a fibonacci heap to lower this to O(1) amoritized,
-    # but fibonacci heaps have bad memory performance
-    # modify this to take into account min or max heap
     def update_key(self, item, key):
+        """
+        Change the priority of an arbitrary element of the heap.
+        Runtime O(log n)
+
+        Parameters
+        ----------
+        item
+            The element of the heap whose priority we are updating
+        key
+            The new priority of `item`
+        """
         index = self._index[item]
         oldKey = self._h[index][0]
         self._h[index] = (key, item)
@@ -462,5 +554,15 @@ class PriorityQueue(Heap):
     # i.e. cancel a job
     # O(log n)
     def remove(self, item):
+        """
+        Remove an arbitrary element of the heap.
+        Runtime O(log n)
+
+        Parameters
+        ----------
+        item
+           The element to be removed
+
+        """
         self.update_key(item, self._prioritized)
         self.extract()

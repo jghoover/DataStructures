@@ -262,13 +262,13 @@ class StackTestCase(TestCase):
         item = "aa"
         self.stack.push(item)
         self.emptystack.push(item)
-        self.assertEqual(len(self.stack), 27)
-        self.assertEqual(len(self.emptystack), 1)
+        self.assertEqual(len(self.stack), 27, "Stack missing items after push")
+        self.assertEqual(len(self.emptystack), 1, "Empty stack missing items after push")
 
         self.stack.pop()
         self.emptystack.pop()
-        self.assertEquals(len(self.stack), 26)
-        self.assertEquals(len(self.emptystack), 0)
+        self.assertEquals(len(self.stack), 26, "Stack missing items after pop")
+        self.assertEquals(len(self.emptystack), 0, "Empty stack missing items after pop")
 
     def test_str(self):
         letters = "abcdefghijklmnopqrstuvwxyz"
@@ -283,27 +283,26 @@ class StackTestCase(TestCase):
 
     def test_push(self):
         item = "aa"
-        self.assertNotIn(item, self.stack._data, "item got into stack before push")
+        self.assertNotIn(item, self.stack._data, "Unexpected item in stack before push")
         self.stack.push(item)
-        self.assertIn(item, self.stack._data, "item not in stack after push")
-        self.assertEquals(item, self.stack._data[-1], "pushed item in wrong place")
+        self.assertIn(item, self.stack._data, "Item missing from stack after push")
 
     def test_pop(self):
-        self.assertEqual(self.stack.pop(), "z", "Got a wrong thing from the pop")
+        self.assertEqual(self.stack.pop(), "z", "Unexpected item returned from pop")
 
         with self.assertRaises(IndexError, msg="Empty stack pop didn't raise IndexError"):
             self.emptystack.pop()
 
     def test_peek(self):
-        self.assertEqual(self.stack.peek(), "z", "Got wrong item from peek")
+        self.assertEqual(self.stack.peek(), "z", "Unexpected item returned from peek")
 
         with self.assertRaises(IndexError, msg="Empty stack peek didn't raise IndexError"):
             self.emptystack.peek()
 
     def test_make_empty(self):
-        self.assertTrue(self.stack)
-        self.assertEqual(len(self.stack), 26)
+        self.assertTrue(self.stack, "Stack unexpectedly false")
+        self.assertEqual(len(self.stack), 26, "Length of stack unexpectedly not 26")
         self.stack.make_empty()
-        self.assertFalse(self.stack)
-        self.assertEqual(len(self.stack), 0)
-        self.assertListEqual(self.stack._data, [])
+        self.assertFalse(self.stack, "Stack after make_empty unexpectedly true")
+        self.assertEqual(len(self.stack), 0, "Length of stack after make_empty unexpectedly not 0")
+        self.assertListEqual(self.stack._data, [], "Stack._data after make_empty unexpectedly not empty list")
