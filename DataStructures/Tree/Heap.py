@@ -10,21 +10,25 @@ class Heap(object):
     """
 
     @staticmethod
-    def heapsort(iterable):
+    def heapsort(iterable, reversed=False):
         """
         Heapsort comparative non-stable sorting algorithm.
         Runtime O(n log n).
 
         Parameters
         ----------
-        iterable (list): The list of objects to sort.
+        iterable : iterable
+            The collection of objects to sort.
+        reversed : bool, optional
+            If True, sort the list in nonincreasing order.  Otherwise, sort in nondecreasing.
 
         Returns
         -------
-        A copy of the list `iterable`, sorted in nondecreasing order.
+        A copy of the list `iterable`, sorted in nondecreasing order (if `reversed` is False)
+        or in nonincreasing order (if `reversed` is True).
         """
 
-        h = Heap(from_list=iterable)
+        h = Heap(from_list=iterable, max_heap=reversed)
         temp = []
 
         while not h.is_empty():
@@ -43,7 +47,8 @@ class Heap(object):
 
         Parameters
         ----------
-        iterable (list): The list of objects to be sorted.
+        iterable : iterable
+            The list of objects to be sorted.
 
         Returns
         -------
@@ -109,7 +114,7 @@ class Heap(object):
         from_list : list, optional
             Initialize the heap with these values.  Defaults to `None`.
 
-        max_heap : Boolean, optional
+        max_heap : bool, optional
             Specify the heap to be a maximum heap.
             Defaults to False, signifying a minimum heap.
 
@@ -121,7 +126,7 @@ class Heap(object):
             The data stored in the heap
         _last : int
             The index of the last element in the heap
-        _max_heap : Boolean
+        _max_heap : bool
             Represents if the heap is a max or min heap.
         """
 
@@ -148,7 +153,7 @@ class Heap(object):
         Parameters
         ----------
         other : iterable
-            The sequence of items to be added to the heap.
+            The sequence of items to be added to the heap.  Items must be comparable.
         """
         self.merge(other)
 
@@ -231,8 +236,8 @@ class Heap(object):
 
     def _bubbleup(self, i):
         """
-        Recursively repair a damaged heap after an `insert()`.
-        Runtime O(\log n)
+        Recursively repair a damaged heap after `insert()`.
+        Runtime O(log n)
 
         Args
         ----
@@ -248,7 +253,7 @@ class Heap(object):
 
     def _bubbledown(self, i):
         """
-        Recursively repair a heap after an `extract()` or called repeatedly from `heapify()`.
+        Recursively repair a heap after `extract()`, or called repeatedly from `heapify()`.
         Runtime O(log n)
 
         Args
@@ -297,9 +302,8 @@ class Heap(object):
 
         Parameters
         ----------
-        item : object
+        item : comparable
             The element to be added to the heap.
-            Must be comparable.
         """
         self._last += 1
         self._h.append(item)
@@ -359,8 +363,8 @@ class Heap(object):
 
         Parameters
         ----------
-        other : list
-            The list of elements to be added to the heap.
+        other : iterable
+            The collection of elements to be added to the heap.
         """
         self._h += other
         self._last += len(other)
@@ -372,7 +376,7 @@ class Heap(object):
 
         Returns
         -------
-        boolean
+        bool
             True if there are items in the heap, false otherwise.
         """
         return self._last <= 0
@@ -406,7 +410,7 @@ class PriorityQueue(Heap):
         from_list : iterable, optional
             Initialize the list containing these arguments.  Defaults to None, representing
             an empty heap.
-        max_heap : boolean, optional
+        max_heap : bool, optional
             If true, initialize heap as a max heap.  Otherwise initialize a min heap.
             Defaults to False.
 
@@ -422,7 +426,7 @@ class PriorityQueue(Heap):
         _last : int
             The index position of the final element in the heap.  Used for reparing heaps
             and for checking if the heap is empty.
-        _max_heap : boolean
+        _max_heap : bool
             If True, the heap is a max heap.  Otherwise, the heap is a min heap.
         _comp : function
             The comparison function used to check the heap property.  Written as a lambda
@@ -460,15 +464,10 @@ class PriorityQueue(Heap):
 
         Returns
         -------
-        boolean
+        bool
             True if `item` is in the heap, false otherwise.
         """
-        try:
-            self._index[item]
-        except KeyError:
-            return False
-
-        return True
+        return item in self._index
 
     def __getitem__(self, key):
         """
@@ -477,32 +476,34 @@ class PriorityQueue(Heap):
         Parameters
         ----------
         key : object
-           The item whose priority we are obtaining
+           The item whose priority we are obtaining.
 
         Returns
         -------
         object
-            The priority of `key`
+            The priority of heap element `key`.
 
         See Also
         --------
-        get_priority : method to obtain the priority of an item
+        get_priority : method to obtain the priority of an item.
         """
         return self.get_priority(key)
 
     # pq.insert(item, priority) == pq[item] = priority
     def __setitem__(self, key, value):
         """
+        Add an item `key` to the heap with priority `value`.
+
         Parameters
         ----------
         key
-            The item to be inserted
+            The item to be inserted.
         value
-            The priority of the item being inserted
+            The priority of the item being inserted.
 
         See Also
         --------
-        insert : method to insert an item with priority
+        insert : method to insert an item with priority.
         """
         self.insert(key, value)
 
@@ -513,11 +514,11 @@ class PriorityQueue(Heap):
         Parameters
         ----------
         key
-            The item to be removed
+            The item to be removed.
 
         See Also
         --------
-        remove() : remove an arbitrary item in the heap
+        remove() : remove an arbitrary item in the heap.
         """
         self.remove(key)
 
@@ -529,10 +530,6 @@ class PriorityQueue(Heap):
         ----------
         i, j : int
             The index positions of the elements we are swapping.
-
-        Returns
-        -------
-
         """
         self._h[i], self._h[j] = self._h[j], self._h[i]
 
@@ -556,8 +553,8 @@ class PriorityQueue(Heap):
 
         See Also
         --------
-        __setitem__ : syntactic sugar for adding an item to the heap
-        bubbleup : repair the heap after `insert()`
+        __setitem__ : syntactic sugar for adding an item to the heap.
+        bubbleup : repair the heap after `insert()`.
         """
         self._last += 1
         self._h.append((key, item))
@@ -680,6 +677,10 @@ class PriorityQueue(Heap):
         ----------
         item
            The element to be removed.
+
+        See Also
+        --------
+        __delitem__ : syntactic sugar for removing an item.
 
         TODO
         ----
