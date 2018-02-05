@@ -3,7 +3,6 @@ from unittest import TestCase
 import DataStructures
 
 
-@unittest.skip("Skipping Graph tests...")
 class GraphTestCase(TestCase):
 
     def setUp(self):
@@ -246,3 +245,65 @@ class HeapTestCase(TestCase):
     pass
 
 
+class StackTestCase(TestCase):
+
+    def setUp(self):
+        self.stack = DataStructures.Stack()
+        for letter in "abcdefghijklmnopqrstuvwxyz":
+            self.stack.push(letter)
+
+        self.emptystack = DataStructures.Stack()
+
+    def test_len(self):
+        self.assertEqual(len(self.stack), 26, "Stack missing items")
+        self.assertEqual(len(self.emptystack), 0, "Empty stack has something")
+
+        # check adding an item to the stack increases its length by 1
+        item = "aa"
+        self.stack.push(item)
+        self.emptystack.push(item)
+        self.assertEqual(len(self.stack), 27)
+        self.assertEqual(len(self.emptystack), 1)
+
+        self.stack.pop()
+        self.emptystack.pop()
+        self.assertEquals(len(self.stack), 26)
+        self.assertEquals(len(self.emptystack), 0)
+
+    def test_str(self):
+        letters = "abcdefghijklmnopqrstuvwxyz"
+        string = str([letter for letter in letters])
+        self.assertEqual(str(self.stack), string, "Stack string not equal")
+
+        self.assertEqual(str(self.emptystack), str([]), "Empty stack string not equal")
+
+    def test_bool(self):
+        self.assertTrue(self.stack, "Stack is not true")
+        self.assertFalse(self.emptystack, "Empty stack not false")
+
+    def test_push(self):
+        item = "aa"
+        self.assertNotIn(item, self.stack._data, "item got into stack before push")
+        self.stack.push(item)
+        self.assertIn(item, self.stack._data, "item not in stack after push")
+        self.assertEquals(item, self.stack._data[-1], "pushed item in wrong place")
+
+    def test_pop(self):
+        self.assertEqual(self.stack.pop(), "z", "Got a wrong thing from the pop")
+
+        with self.assertRaises(IndexError, msg="Empty stack pop didn't raise IndexError"):
+            self.emptystack.pop()
+
+    def test_peek(self):
+        self.assertEqual(self.stack.peek(), "z", "Got wrong item from peek")
+
+        with self.assertRaises(IndexError, msg="Empty stack peek didn't raise IndexError"):
+            self.emptystack.peek()
+
+    def test_make_empty(self):
+        self.assertTrue(self.stack)
+        self.assertEqual(len(self.stack), 26)
+        self.stack.make_empty()
+        self.assertFalse(self.stack)
+        self.assertEqual(len(self.stack), 0)
+        self.assertListEqual(self.stack._data, [])
