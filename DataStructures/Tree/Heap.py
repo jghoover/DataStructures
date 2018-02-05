@@ -398,6 +398,40 @@ class PriorityQueue(Heap):
     """
 
     def __init__(self, from_list=None, max_heap=False):
+        """
+        Initialize a new heap.
+
+        Parameters
+        ----------
+        from_list : iterable, optional
+            Initialize the list containing these arguments.  Defaults to None, representing
+            an empty heap.
+        max_heap : boolean, optional
+            If true, initialize heap as a max heap.  Otherwise initialize a min heap.
+            Defaults to False.
+
+
+        Other Parameters
+        ----------------
+        _h : list
+            Heap data
+        _index : dict
+            Dictionary to store the index position of items in the heap.
+            Keys are the item object of a (priority, item) tuple.  Values are the
+            index position in `_h`.
+        _last : int
+            The index position of the final element in the heap.  Used for reparing heaps
+            and for checking if the heap is empty.
+        _max_heap : boolean
+            If True, the heap is a max heap.  Otherwise, the heap is a min heap.
+        _comp : function
+            The comparison function used to check the heap property.  Written as a lambda
+            function that compares only the priority object of a (priority, item) tuple.
+        _prioritized : {-inf, inf}
+            The maximum value any priority can take.  `-inf` for min heaps, and `inf` for max
+            heaps.  Used in `remove()`.
+
+        """
         self._h = [None, ]
         self._index = {}
         self._last = 0
@@ -488,22 +522,70 @@ class PriorityQueue(Heap):
         self.remove(key)
 
     def _swap(self, i, j):
+        """
+        Exchange the items at indices `i` and `j` and update the index dict.
+
+        Parameters
+        ----------
+        i, j : int
+            The index positions of the elements we are swapping.
+
+        Returns
+        -------
+
+        """
         self._h[i], self._h[j] = self._h[j], self._h[i]
 
         # update index dict
         self._index[self._h[i][1]] = i
         self._index[self._h[j][1]] = j
 
-    # complexity: O(log n)
     def insert(self, item, key):
+        """
+        Add element `item` to the heap with priority `key` and update the _index dict
+        with the final index of `item`, which is found during the process of repairing
+        the heap using `bubbleup()`.
+        Runtime O(log n)
+
+        Parameters
+        ----------
+        item : object
+            The object to be added to the heap.
+        key : comparable
+            The priority of `item`.
+
+        See Also
+        --------
+        __setitem__ : syntactic sugar for adding an item to the heap
+        bubbleup : repair the heap after `insert()`
+        """
         self._last += 1
         self._h.append((key, item))
         self._index[item] = self._bubbleup(self._last)
 
     # also called extract min/max
     def extract(self):
+        """
+        Remove and return the root from the heap---that is, the item with
+        the highest priority.  Then, repair the heap using `bubbledown()`.
+        Runtime O(log n)
+
+        Returns
+        -------
+        object
+            The item at the root of the heap.
+
+        Raises
+        ------
+        IndexError
+            If the heap is empty.
+
+        See Also
+        --------
+        bubbledown : repair the heap after `extract()`.
+        """
         if self.is_empty():
-            return None
+            raise IndexError("Cannot extract from empty heap")
 
         item = self._h[1][1]
         # pull up last data to new root
@@ -517,9 +599,43 @@ class PriorityQueue(Heap):
         return item
 
     def peek(self):
-        return None if self.is_empty() else self._h[1][1]
+        """
+        Return, but don't remove, the item at the root of the heap.
+        Runtime O(1)
+
+        Returns
+        -------
+        object
+            The item at the root of the heap.
+
+        Raises
+        ------
+        IndexError
+            If the heap is empty.
+        """
+        if self.is_empty():
+            raise IndexError("Cannot peek from empty heap")
+        else:
+            return self._h[1]
 
     def get_priority(self, item):
+        """
+        Get the priority of `item` in the heap.
+
+        Parameters
+        ----------
+        item : object
+            The element whose priority we are getting.
+
+        Returns
+        -------
+        comparable
+            The priority of `item`.
+
+        TODO
+        ----
+        Does this raise any errors?
+        """
         index = self._index[item]
         return self._h[index][0]
 
@@ -534,6 +650,10 @@ class PriorityQueue(Heap):
             The element of the heap whose priority we are updating
         key
             The new priority of `item`
+
+        TODO
+        ----
+        Does this raise any errors?
         """
         index = self._index[item]
         oldKey = self._h[index][0]
@@ -551,8 +671,6 @@ class PriorityQueue(Heap):
             else:
                 self._bubbledown(index)
 
-    # i.e. cancel a job
-    # O(log n)
     def remove(self, item):
         """
         Remove an arbitrary element of the heap.
@@ -561,7 +679,11 @@ class PriorityQueue(Heap):
         Parameters
         ----------
         item
-           The element to be removed
+           The element to be removed.
+
+        TODO
+        ----
+        Does this raise any errors?
 
         """
         self.update_key(item, self._prioritized)
