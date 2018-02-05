@@ -3,6 +3,7 @@ from unittest import TestCase
 import DataStructures
 
 
+@unittest.skip("Skipping Graph tests...")
 class GraphTestCase(TestCase):
 
     def setUp(self):
@@ -243,3 +244,5 @@ class GraphTestCase(TestCase):
 @unittest.skip("Skipping Heap...not written yet")
 class HeapTestCase(TestCase):
     pass
+
+
