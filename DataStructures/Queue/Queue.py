@@ -19,13 +19,13 @@ class Queue(object):
         if len(self) > 0:
             return self._data.pop(0)
         else:
-            raise IndexError("No Queue item to dequeue")
+            raise IndexError("Cannot dequeue from empty Queue")
 
     def peek(self):
         if len(self) > 0:
             return self._data[0]
         else:
-            raise IndexError("No queue item to peek")
+            raise IndexError("Cannot peek from empty Queue")
 
     def make_empty(self):
         self._data = []
@@ -55,25 +55,25 @@ class DEQueue(object):
         if len(self) > 0:
             return self._data.pop()
         else:
-            raise IndexError("No DEQueue item to pop")
+            raise IndexError("Cannot pop from empty DEQueue")
 
     def pop_left(self):
         if len(self) > 0:
             return self._data.pop(0)
         else:
-            raise IndexError("No DEQueue item to pop_left")
+            raise IndexError("Cannot pop_left from empty DEQueue")
 
     def peek(self):
         if len(self) > 0:
             return self._data[-1]
         else:
-            raise IndexError("No DEQueue item to peek")
+            raise IndexError("Cannot peek from empty DEQueue")
 
     def peek_left(self):
         if len(self) > 0:
             return self._data[0]
         else:
-            raise IndexError("No DEQueue item to peek_left")
+            raise IndexError("Cannot peek_left from empty DEQueue")
 
     def make_empty(self):
         self._data = []

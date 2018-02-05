@@ -3,6 +3,7 @@ from unittest import TestCase
 import DataStructures
 
 
+@unittest.skip("Skipping")
 class GraphTestCase(TestCase):
 
     def setUp(self):
@@ -245,6 +246,7 @@ class HeapTestCase(TestCase):
     pass
 
 
+@unittest.skip("Skipping")
 class StackTestCase(TestCase):
 
     def setUp(self):
@@ -306,3 +308,62 @@ class StackTestCase(TestCase):
         self.assertFalse(self.stack, "Stack after make_empty unexpectedly true")
         self.assertEqual(len(self.stack), 0, "Length of stack after make_empty unexpectedly not 0")
         self.assertListEqual(self.stack._data, [], "Stack._data after make_empty unexpectedly not empty list")
+
+
+class QueueTestCase(TestCase):
+
+    def setUp(self):
+        self.emptyqueue = DataStructures.Queue()
+
+        self.queue = DataStructures.Queue()
+        for letter in "abcdefghijklmnopqrstuvwxyz":
+            self.queue.enqueue(letter)
+
+    def test_len(self):
+        self.assertEqual(len(self.queue), 26, "Queue length not 26")
+        self.assertEqual(len(self.emptyqueue), 0, "Empty queue length not 0")
+
+        self.queue.enqueue("aa")
+        self.assertEqual(len(self.queue), 27)
+
+        self.queue.dequeue()
+        self.assertEqual(len(self.queue), 26)
+
+        self.queue.make_empty()
+        self.assertEqual(len(self.queue), 0)
+
+    def test_str(self):
+        letters = "abcdefghijklmnopqrstuvwxyz"
+        string = str([letter for letter in letters])
+        self.assertEqual(str(self.queue), string)
+        self.assertEqual(str(self.emptyqueue), str([]))
+
+    def test_bool(self):
+        self.assertTrue(self.queue)
+        self.assertFalse(self.emptyqueue)
+
+    def test_enqueue(self):
+        item = "aa"
+        self.assertNotIn(item, self.queue._data)
+        self.queue.enqueue(item)
+        self.assertIn(item, self.queue._data)
+        self.assertEqual(item, self.queue._data[-1])
+
+    def test_dequeue(self):
+        self.assertEqual(self.queue.dequeue(), "a")
+        self.assertNotIn("a", self.queue._data)
+
+        with self.assertRaises(IndexError):
+            self.emptyqueue.dequeue()
+
+    def test_peek(self):
+        self.assertEqual(self.queue.peek(), "a")
+        self.assertIn("a", self.queue._data)
+
+        with self.assertRaises(IndexError):
+            self.emptyqueue.peek()
+
+    def test_make_empty(self):
+        self.assertTrue(self.queue)
+        self.queue.make_empty()
+        self.assertEqual(self.queue._data, [])

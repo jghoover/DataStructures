@@ -19,13 +19,13 @@ class Stack(object):
         if len(self) > 0:
             return self._data.pop()
         else:
-            raise IndexError("No Stack item to pop")
+            raise IndexError("Cannot pop from empty Stack")
 
     def peek(self):
         if len(self) > 0:
             return self._data[-1]
         else:
-            raise IndexError("No Stack item to peek")
+            raise IndexError("Cannot peek from empty Stack")
 
     def make_empty(self):
         self._data = []
