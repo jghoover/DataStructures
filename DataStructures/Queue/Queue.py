@@ -31,7 +31,7 @@ class Queue(object):
         self._data = []
 
 
-class DEQueue(object):
+class DoubleEndedQueue(object):
 
     def __init__(self):
         self._data = []

@@ -3,7 +3,6 @@ from unittest import TestCase
 import DataStructures
 
 
-@unittest.skip("Skipping")
 class GraphTestCase(TestCase):
 
     def setUp(self):
@@ -46,7 +45,7 @@ class GraphTestCase(TestCase):
 
     def test_vertices(self):
         # make sure that empty.vertices is an empty list
-        self.assertEquals(len(self.empty.vertices), 0, "unexpected empty graph vertices")
+        self.assertEqual(len(self.empty.vertices), 0, "unexpected empty graph vertices")
 
         # test graph vertices
         nodes = ["a", "b", "c", "d", "e", "f", "g", "h"]
@@ -72,7 +71,7 @@ class GraphTestCase(TestCase):
     def test_edges(self):
 
         # empty graph
-        self.assertEquals(len(self.empty.edges), 0, "unexpected empty graph edges present")
+        self.assertEqual(len(self.empty.edges), 0, "unexpected empty graph edges present")
 
         # test graph edges
         edges = [("a", "b"), ("a", "e"),
@@ -246,7 +245,6 @@ class HeapTestCase(TestCase):
     pass
 
 
-@unittest.skip("Skipping")
 class StackTestCase(TestCase):
 
     def setUp(self):
@@ -269,8 +267,8 @@ class StackTestCase(TestCase):
 
         self.stack.pop()
         self.emptystack.pop()
-        self.assertEquals(len(self.stack), 26, "Stack missing items after pop")
-        self.assertEquals(len(self.emptystack), 0, "Empty stack missing items after pop")
+        self.assertEqual(len(self.stack), 26, "Stack missing items after pop")
+        self.assertEqual(len(self.emptystack), 0, "Empty stack missing items after pop")
 
     def test_str(self):
         letters = "abcdefghijklmnopqrstuvwxyz"
@@ -324,23 +322,23 @@ class QueueTestCase(TestCase):
         self.assertEqual(len(self.emptyqueue), 0, "Empty queue length not 0")
 
         self.queue.enqueue("aa")
-        self.assertEqual(len(self.queue), 27)
+        self.assertEqual(len(self.queue), 27, "Queue length not 27 after enqueue")
 
         self.queue.dequeue()
-        self.assertEqual(len(self.queue), 26)
+        self.assertEqual(len(self.queue), 26, "Queue length not 26 after dequeue")
 
         self.queue.make_empty()
-        self.assertEqual(len(self.queue), 0)
+        self.assertEqual(len(self.queue), 0, "Queue length not 0 after make_empty")
 
     def test_str(self):
         letters = "abcdefghijklmnopqrstuvwxyz"
         string = str([letter for letter in letters])
-        self.assertEqual(str(self.queue), string)
-        self.assertEqual(str(self.emptyqueue), str([]))
+        self.assertEqual(str(self.queue), string, "Queue string not equal")
+        self.assertEqual(str(self.emptyqueue), str([]), "Empty queue string not equal")
 
     def test_bool(self):
-        self.assertTrue(self.queue)
-        self.assertFalse(self.emptyqueue)
+        self.assertTrue(self.queue, "Queue unexpectedly false")
+        self.assertFalse(self.emptyqueue, "Empty queue unexpectedly true")
 
     def test_enqueue(self):
         item = "aa"
@@ -367,3 +365,84 @@ class QueueTestCase(TestCase):
         self.assertTrue(self.queue)
         self.queue.make_empty()
         self.assertEqual(self.queue._data, [])
+
+
+class DEQueueTestCase(TestCase):
+
+    def setUp(self):
+        self.deq = DataStructures.DoubleEndedQueue()
+        self.emptydeq = DataStructures.DoubleEndedQueue()
+
+        for letter in "abcdefghijklmnopqrstuvwxyz":
+            self.deq.append(letter)
+
+    def test_len(self):
+        self.assertEqual(len(self.deq), 26, "DEQ length not 26")
+        self.assertEqual(len(self.emptydeq), 0, "Empty deq length not 0")
+
+        # check append, append_left
+        self.deq.append("aa")
+        self.assertEqual(len(self.deq), 27, "DEQ length not 27 after append")
+        self.deq.append_left("ab")
+        self.assertEqual(len(self.deq), 28, "DEQ length not 28 after append_left")
+
+        # check pop, pop_left
+        self.deq.pop()
+        self.assertEqual(len(self.deq), 27, "DEQ length not 27 after pop")
+        self.deq.pop_left()
+        self.assertEqual(len(self.deq), 26, "DEQ length not 26 after pop_left")
+
+        # check make_empty
+        self.deq.make_empty()
+        self.assertEqual(len(self.deq), 0, "DEQ length not 0 after make_empty")
+
+    def test_str(self):
+        letters = "abcdefghijklmnopqrstuvwxyz"
+        string = str([letter for letter in letters])
+        self.assertEqual(str(self.deq), string, "DEQ string incorrect")
+
+        self.assertEqual(str(self.emptydeq), str([]), "Empty DEQ string incorrect")
+
+    def test_bool(self):
+        self.assertTrue(self.deq, "DEQ unexpectedly false")
+        self.assertFalse(self.emptydeq, "Empty DEQ unexpectedly true")
+
+    def test_append(self):
+        item = "aa"
+        self.assertNotIn(item, self.deq._data, "item unexpectedly in deq")
+        self.deq.append(item)
+        self.assertIn(item, self.deq._data, "item unexpectedly not in deq")
+        self.assertEqual(item, self.deq._data[-1], "item unexpectedly not in place")
+
+    def test_append_left(self):
+        item = "aa"
+        self.assertNotIn(item, self.deq._data, "item unexpectedly in deq")
+        self.deq.append_left(item)
+        self.assertIn(item, self.deq._data, "item unexpectedly not in deq")
+        self.assertEqual(item, self.deq._data[0], "item unexpectedly not in place")
+
+    def test_pop(self):
+        self.assertEqual(self.deq.pop(), "z", "unexpected item from pop")
+
+    def test_pop_left(self):
+        self.assertEqual(self.deq.pop_left(), "a", "unexpected item from pop_left")
+
+    def test_peek(self):
+        self.assertEqual(self.deq.peek(), "z", "unexpected item from peek")
+        self.assertIn("z", self.deq._data)
+
+    def test_peek_left(self):
+        self.assertEqual(self.deq.peek_left(), "a", "unexpected item from peek_left")
+        self.assertIn("a", self.deq._data)
+
+    def test_make_empty(self):
+        self.assertTrue(self.deq)
+        self.assertFalse(self.emptydeq)
+
+        self.deq.make_empty()
+        self.emptydeq.make_empty()
+
+        self.assertFalse(self.deq)
+        self.assertFalse(self.emptydeq)
+
+        self.assertEqual(self.deq._data, [])

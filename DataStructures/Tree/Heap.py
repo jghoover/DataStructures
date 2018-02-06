@@ -600,6 +600,8 @@ class PriorityQueue(Heap):
         Return, but don't remove, the item at the root of the heap.
         Runtime O(1)
 
+        print([str(card) for card in human_hand])
+
         Returns
         -------
         object
@@ -628,11 +630,8 @@ class PriorityQueue(Heap):
         -------
         comparable
             The priority of `item`.
-
-        TODO
-        ----
-        Does this raise any errors?
         """
+        # todo: does this raise any errors?
         index = self._index[item]
         return self._h[index][0]
 
@@ -647,11 +646,8 @@ class PriorityQueue(Heap):
             The element of the heap whose priority we are updating
         key
             The new priority of `item`
-
-        TODO
-        ----
-        Does this raise any errors?
         """
+        # todo: does this raise any errors?
         index = self._index[item]
         oldKey = self._h[index][0]
         self._h[index] = (key, item)
