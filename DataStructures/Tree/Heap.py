@@ -397,8 +397,14 @@ class Heap(object):
 
 class PriorityQueue(Heap):
     """
-    Priority Queue class, implemented using a binary heap.
-    Provides min and max priority queues.
+    Priority Queue class, implemented using a binary heap, providing min and max priority queues.  Elements inserted
+    into the Priority Queue must be immutable. Note that while duplicate elements are valid, no guarantees are made
+    as to which instance will be modified with `remove()` and `update_key()` functions, or their syntactic sugar.
+    This behavior can be mitigated by inserting elements as tuples containing the desired item and a sequential
+    variable.
+
+    Attributes
+    ----------
     """
 
     def __init__(self, from_list=None, max_heap=False):
@@ -408,13 +414,11 @@ class PriorityQueue(Heap):
         Parameters
         ----------
         from_list : iterable, optional
-            Initialize the list containing these arguments.  Defaults to None, representing
-            an empty heap.
+            Initialize the list containing these arguments.  Defaults to None, representing an empty heap.
         max_heap : bool, optional
-            If true, initialize heap as a max heap.  Otherwise initialize a min heap.
-            Defaults to False.
+            If true, initialize heap as a max heap, otherwise initialize a min heap. Defaults to False.
 
-
+        todo: move other parameters to class docstring
         Other Parameters
         ----------------
         _h : list
@@ -447,6 +451,7 @@ class PriorityQueue(Heap):
             self._comp = lambda x, y: x[0] < y[0]
             self._prioritized = -inf
 
+        # todo: rewrite this so it actually works
         if from_list:
             self._h += from_list
             self._last = len(from_list)
@@ -454,12 +459,12 @@ class PriorityQueue(Heap):
 
     def __contains__(self, item):
         """
-        Check if the heap contains `item`.
+        Check if the Priority Queue contains `item`.
 
         Parameters
         ----------
         item : object
-           The object to check for containment.
+           The element to check for containment.
 
         Returns
         -------
@@ -470,7 +475,8 @@ class PriorityQueue(Heap):
 
     def __getitem__(self, key):
         """
-        Obtain the priority of the item `key`.
+        Obtain the priority of the item `key`.  If duplicate instances of `key` are present, no guarantees are made as
+        to which one's priority will be returned.
 
         Parameters
         ----------
@@ -490,10 +496,9 @@ class PriorityQueue(Heap):
 
     def __setitem__(self, key, value):
         """
-        If `key` is not already present in the Priority Queue,
-        add it with priority `value`.  If `key` is already present,
-        update its priority to `value`.  Note that if duplicate items
-        need to be inserted into the Priority Queue, you must use `insert()`.
+        If `key` is not already present in the Priority Queue, add it with priority `value`.  If `key` is already
+        present, update its priority to `value`.  If duplicate items need to be inserted into the Priority Queue,
+        you must use `insert()`.
 
         Parameters
         ----------
@@ -512,10 +517,10 @@ class PriorityQueue(Heap):
         else:
             self.insert(key, value)
 
-    # todo: investigate more about how to define which of duplicate items is removed
     def __delitem__(self, key):
         """
-        Remove the arbitrary item `key` from the heap.
+        Remove an instance of the item `key` from the Priority Queue. If duplicate instances of `key` are present,
+        no guarantees are made as to which instance will be removed.
 
         Parameters
         ----------
@@ -524,7 +529,7 @@ class PriorityQueue(Heap):
 
         See Also
         --------
-        remove() : Method to remove an arbitrary item in the heap.
+        remove : Method to remove a single instance of `item`.
         """
         self.remove(key)
 
@@ -545,22 +550,20 @@ class PriorityQueue(Heap):
 
     def insert(self, item, key):
         """
-        Add element `item` to the heap with priority `key` and update the _index dict
-        with the final index of `item`, which is found during the process of repairing
-        the heap using `bubbleup()`.
+        Add element `item` to the heap with priority `key`.  The element `item` must be immutable.
         Runtime O(log n)
 
         Parameters
         ----------
         item : object
             The object to be added to the heap.
-        key : comparable
+        key : object
             The priority of `item`.
 
         See Also
         --------
-        __setitem__ : Syntactic sugar for adding an item to the heap or updating its priority.
-        bubbleup : Repair the heap after `insert()`.
+        __setitem__ : Syntactic sugar for adding an item to the Priority Queue or updating its priority.
+        bubbleup : Repair the Priority Queue after `insert()`.
         """
         self._last += 1
         self._h.append((key, item))
@@ -569,8 +572,7 @@ class PriorityQueue(Heap):
     # also called extract min/max
     def extract(self):
         """
-        Remove and return the root from the heap---that is, the item with
-        the highest priority.  Then, repair the heap using `bubbledown()`.
+        Dequeue.  Remove and return the item with the highest priority.
         Runtime O(log n)
 
         Returns
@@ -585,14 +587,14 @@ class PriorityQueue(Heap):
 
         See Also
         --------
-        bubbledown : repair the heap after `extract()`.
+        bubbledown : repair the Priority Queue after `extract()`.
         """
         if self.is_empty():
             raise IndexError("Cannot extract from empty Priority Queue")
 
-        # todo: make sure this works
         item = self._h[1][1]
 
+        # todo: make sure this works
         if self._last > 1:
             # remove extracted item from dict
             del self._index[item]
@@ -635,7 +637,8 @@ class PriorityQueue(Heap):
 
     def get_priority(self, item):
         """
-        Get the priority of `item` in the heap.
+        Get the priority of `item` in the heap.  If duplicate instances of `item` are present, no guarantees are made
+        as to which instance's priority will be returned.
 
         Parameters
         ----------
@@ -664,7 +667,8 @@ class PriorityQueue(Heap):
 
     def update_key(self, item, key):
         """
-        Change the priority of an arbitrary element of the heap.
+        Change the priority of an arbitrary element Priority Queue element `item`.  If duplicate instances of `item`
+        are present, no guarantees are made as to which instance will be updated.
         Runtime O(log n)
 
         Parameters
@@ -678,6 +682,10 @@ class PriorityQueue(Heap):
         ------
         KeyError
             If `item` is not in the Priority Queue.
+
+        See Also
+        --------
+        __setitem__ : Syntactic sugar to update the priority of `item`.
         """
         if item not in self:
             raise KeyError("Item {0} not present in Priority Queue".format(repr(item)))
@@ -698,19 +706,16 @@ class PriorityQueue(Heap):
             else:
                 self._bubbledown(index)
 
-    def remove(self, item, count=-1):
+    def remove(self, item):
         """
-        Remove a maximum of `count` copies of an arbitrary element of the heap.
-        If count is not specified, remove all copies.
+        Remove a single instance of `item` from the Priority Queue.  If duplicate instances of `item` are present, no
+        guarantees are made as to which instance will be removed.
         Runtime O(log n)
 
         Parameters
         ----------
         item : object
            The element to be removed.
-        count : int, optional
-            The number of copies of `item` to be removed.  Default of `-1` represents
-            the removal of all copies.
 
         Raises
         ------
@@ -719,23 +724,11 @@ class PriorityQueue(Heap):
 
         See Also
         --------
-        __delitem__ : Syntactic sugar for removing an item.
+        __delitem__ : Syntactic sugar to remove an instance of `item`.
         """
 
-        # todo: make sure count works to remove that number of copies
         if item not in self:
             raise KeyError("Item {0} not present in Priority Queue".format(repr(item)))
 
-        if count == -1:
-            # remove all copies
-            while item in self:
-                self.update_key(item, self._prioritized)
-                self.extract()
-        else:
-            while count > 0:
-                # remove count copies
-                if item not in self:
-                    break
-                self.update_key(item, self._prioritized)
-                self.extract()
-                count -= 1
+        self.update_key(item, self._prioritized)
+        self.extract()
