@@ -1,1 +1,1 @@
-from DataStructures.Graph.Graph import Graph
+from DataStructures.Graph.graph import Graph

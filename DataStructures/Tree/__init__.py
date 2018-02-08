@@ -1,2 +1,2 @@
-from DataStructures.Tree.BinarySearchTree import BinarySearchTree
-from DataStructures.Tree.Heap import Heap, PriorityQueue
+from DataStructures.Tree.binarysearchtree import BinarySearchTree
+from DataStructures.Tree.heap import Heap, PriorityQueue

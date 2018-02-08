@@ -5,6 +5,7 @@ from DataStructures import PriorityQueue
 
 class Graph(object):
     # todo: ideally, you wouldn't have to specify a graph as weighted
+    # todo: make init more efficient
     def __init__(self, graph_data=None, weighted=False):
 
         if graph_data is None:
@@ -29,6 +30,15 @@ class Graph(object):
 
                 self.add_directed_edge(node, neighbor, weight)
 
+    def __contains__(self, item):
+        return item in self.vertices
+
+    def __iter__(self):
+        return iter(self.vertices)
+
+    def __len__(self):
+        return len(self.vertices)
+
     @property
     def vertices(self):
         return list(self._graph.keys())
@@ -36,6 +46,20 @@ class Graph(object):
     @property
     def edges(self):
         return self._edges
+
+    @staticmethod
+    def reconstruct_path(destination, parent_dict):
+        path = []
+
+        def recon(node):
+            path.insert(0, node)
+
+            if not parent_dict[node]:
+                return path
+
+            return recon(node, parent_dict[node])
+
+        return recon(0, destination)
 
     def adj(self, node):
         return self._graph[node]
@@ -63,10 +87,14 @@ class Graph(object):
             if node not in self.vertices:
                 raise ValueError("Node {0} not present in the graph".format(repr(node)))
         else:
-            self._graph[node1].append(node2)
-            self._edges.append((node1, node2))
+            if not weight:
+                self._graph[node1].append(node2)
+
             if weight:
                 self._weight[(node1, node2)] = weight
+                self._graph[node1].append((node2, weight))
+
+            self._edges.append((node1, node2))
 
     def add_undirected_edge(self, node1, node2, weight=None):
         self.add_directed_edge(node1, node2, weight)
@@ -93,6 +121,7 @@ class Graph(object):
     def remove_node(self, node):
         if node in self.vertices:
             # get a list of all edges that the specified node is in
+            # todo: this could be more efficient
             removal = [edge for edge in self.edges if edge[0] == node or edge[1] == node]
             # then remove them
             for edge in removal:
@@ -120,9 +149,7 @@ class Graph(object):
             frontier = nextfrontier
             i += 1
 
-        bfs = namedtuple("BFS", ["level", "parent"])
-
-        return bfs(level, parent)
+        return namedtuple("BFS", ["level", "parent"])(level, parent)
 
     # runtime: O(V + E) and E \in O(V^2) so O(V^2)
     def depth_first_search(self):
@@ -174,14 +201,13 @@ class Graph(object):
 
             return False
 
-        # print([(node, visit(node)) for node in self.vertices])
         return any(visit(node) for node in self.vertices)
 
-    # single shortest path on a weighted graph. Dijkstra's Alg
+    # shortest path on a weighted graph. Dijkstra's Alg
     # runtime: O(E + V log V), but since E \in O(V^2), we get
     #    O(V^2) essentially.
     # Dijkstra's algorithm
-    def shortest_path(self, source, destination):
+    def shortest_path(self, source):
         q = PriorityQueue()
 
         dist = {}
@@ -201,7 +227,6 @@ class Graph(object):
             node = q.extract()
 
             for neighbor in self.adj(node):
-                # need to fix this---no length attribute atm
                 length = dist[node] + self.weight(node, neighbor)
                 # update
                 if length < dist[neighbor]:
@@ -209,19 +234,7 @@ class Graph(object):
                     parent[neighbor] = node
                     q.update_key(neighbor, length)
 
-        path = []
-
-        # todo: switch reconstruct path to a different function that takes a parent dict as its arg
-        # reconstruct path and return
-        def recon_path(length, node):
-            path.insert(0, node)
-
-            if not parent[node]:
-                return namedtuple("Shortest_Path", ("length", "path"))(length, path)
-
-            return recon_path(length + self.weight(parent[node], node), parent[node])
-
-        return recon_path(0, destination)
+        return namedtuple("Shortest_Path", ["length", "parent"])(dist, parent)
 
     def contract_edge(self, node1, node2):
         pass

@@ -1,1 +1,1 @@
-from DataStructures.Queue.Queue import Queue, DoubleEndedQueue
+from DataStructures.Queue.queue import Queue, DoubleEndedQueue
