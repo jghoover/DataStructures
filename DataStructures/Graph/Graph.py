@@ -4,22 +4,30 @@ from DataStructures import PriorityQueue
 
 
 class Graph(object):
-    def __init__(self, graph_data=None):
+    # todo: ideally, you wouldn't have to specify a graph as weighted
+    def __init__(self, graph_data=None, weighted=False):
 
         if graph_data is None:
             graph_data = {}
 
         self._graph = {}
         self._edges = []
+        self._weight = {}
+        self._weighted = weighted
         # add vertices
         for node in list(graph_data.keys()):
             self._graph[node] = []
 
         # add edges
         for node in self.vertices:
-            for neighbor in graph_data[node]:
-                if (node, neighbor) not in self._edges:
-                    self.add_directed_edge(node, neighbor)
+            for adj in graph_data[node]:
+                if weighted:
+                    neighbor, weight = adj
+                else:
+                    neighbor = adj
+                    weight = None
+
+                self.add_directed_edge(node, neighbor, weight)
 
     @property
     def vertices(self):
@@ -31,6 +39,15 @@ class Graph(object):
 
     def adj(self, node):
         return self._graph[node]
+
+    # get the weight of an edge between node1, node2
+    def weight(self, node1, node2):
+        if self._weighted:
+            weight = self._weight[(node1, node2)]
+        else:
+            weight = 1
+
+        return weight
 
     def add_node(self, node):
         # add an unconnected vertex to the graph
@@ -48,6 +65,8 @@ class Graph(object):
         else:
             self._graph[node1].append(node2)
             self._edges.append((node1, node2))
+            if weight:
+                self._weight[(node1, node2)] = weight
 
     def add_undirected_edge(self, node1, node2, weight=None):
         self.add_directed_edge(node1, node2, weight)
@@ -159,10 +178,9 @@ class Graph(object):
         return any(visit(node) for node in self.vertices)
 
     # single shortest path on a weighted graph. Dijkstra's Alg
-    # runtime: O(V log V + E), but since E \in O(V^2), we get
+    # runtime: O(E + V log V), but since E \in O(V^2), we get
     #    O(V^2) essentially.
     # Dijkstra's algorithm
-    # todo: this currently does not work, as there's no handling of weighted graphs right now
     def shortest_path(self, source, destination):
         q = PriorityQueue()
 
@@ -184,7 +202,7 @@ class Graph(object):
 
             for neighbor in self.adj(node):
                 # need to fix this---no length attribute atm
-                length = dist[node] + self.length[(node, neighbor)]
+                length = dist[node] + self.weight(node, neighbor)
                 # update
                 if length < dist[neighbor]:
                     dist[neighbor] = length
@@ -193,6 +211,7 @@ class Graph(object):
 
         path = []
 
+        # todo: switch reconstruct path to a different function that takes a parent dict as its arg
         # reconstruct path and return
         def recon_path(length, node):
             path.insert(0, node)
@@ -200,7 +219,7 @@ class Graph(object):
             if not parent[node]:
                 return namedtuple("Shortest_Path", ("length", "path"))(length, path)
 
-            return recon_path(length + self.length[(parent[node], node)], parent[node])
+            return recon_path(length + self.weight(parent[node], node), parent[node])
 
         return recon_path(0, destination)
 
