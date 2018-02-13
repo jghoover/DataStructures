@@ -22,6 +22,7 @@ class HeapTestCase(unittest.TestCase):
             self.minheap.insert(num)
             self.maxheap.insert(num)
 
+        # use deepcopy so that we use different instances of data
         self.minIterHeap = Heap(from_list=deepcopy(self.data), max_heap=False)
         self.maxIterHeap = Heap(from_list=deepcopy(self.data), max_heap=True)
 
@@ -59,81 +60,49 @@ class HeapTestCase(unittest.TestCase):
                 heap._h.insert(0, None)
                 self.assertFalse(self.is_heap(heap), "{0} unexpectedly a heap".format(name))
 
-    @unittest.skip("Not written")
-    def test_add(self):
-        pass
-
     def test_bool(self):
         for heap, name in self.nonempty:
             with self.subTest(heap=heap, name=name):
                 self.assertTrue(heap, "{0} unexpectedly False".format(name))
+
+                heap.make_empty()
+                self.assertFalse(heap, "{0} unexpectedly True")
 
         for heap, name in self.empty:
             with self.subTest(heap=heap, name=name):
                 self.assertFalse(heap, "{0} unexpectedly True".format(name))
 
     def test_len(self):
-        for heap in [self.minheap, self.maxheap, self.minIterHeap, self.maxIterHeap, self.minEmptyHeap,
-                     self.maxEmptyHeap]:
-
+        for heap, name in self.allheaps:
             with self.subTest(heap=heap):
-                self.assertEqual(len(heap), len(heap._h[1:]), "heap length incorrect")
+                self.assertEqual(len(heap), len(heap._h[1:]), "{0} length incorrect".format(name))
 
     def test_str(self):
-        for heap in self.allheaps:
-            with self.subTest(heap=heap):
-                self.assertEqual(str(heap), str(heap._h[1:]), "heap string incorrect")
-
-    @unittest.skip("Not written")
-    def test_parent(self):
         for heap, name in self.allheaps:
-            pass
+            with self.subTest(heap=heap):
+                self.assertEqual(str(heap), str(heap._h[1:]), "{0} string incorrect".format(name))
 
-    @unittest.skip("Not written")
-    def test_left(self):
-        pass
-
-    @unittest.skip("Not written")
-    def test_right(self):
-        pass
-
-    @unittest.skip("Not written")
-    def test_swap(self):
-        pass
-
-    @unittest.skip("Not written")
-    def test_bubbleup(self):
-        pass
-
-    @unittest.skip("Not written")
-    def test_bubbledown(self):
-        pass
-
-    @unittest.skip("Not written")
-    def test_heapify(self):
-        pass
-
-    @unittest.skip("Not written")
+    @unittest.skip("insert test not written")
     def test_insert(self):
         pass
 
-    @unittest.skip("Not written")
+    @unittest.skip("extract test not written")
     def test_extract(self):
         pass
 
-    @unittest.skip("Not written")
-    def test_peek(self):
-        pass
-
-    @unittest.skip("Not written")
+    @unittest.skip("merge test not written")
     def test_merge(self):
         pass
 
-    @unittest.skip("Not written")
     def test_is_empty(self):
-        pass
+        for heap, name in self.nonempty:
+            self.assertFalse(heap.is_empty(), "{0} unexpectedly is_empty".format(name))
 
-    @unittest.skip("Not written")
-    def test_get_kind(self):
-        pass
+            heap.make_empty()
+            self.assertTrue(heap.is_empty(), "{0} unexpectedly not is_empty after make_empty")
+
+        for heap, name in self.empty:
+            self.assertTrue(heap.is_empty(), "{0} unexpectedly not is_empty".format(name))
+
+
 

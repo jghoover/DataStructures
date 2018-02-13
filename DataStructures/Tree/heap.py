@@ -397,6 +397,10 @@ class Heap(object):
         """
         return "Maximum" if self._max_heap else "Minimum"
 
+    def make_empty(self):
+        self._h = [None, ]
+        self._last = 0
+
 
 class PriorityQueue(Heap):
     """
