@@ -123,6 +123,7 @@ class Graph(object):
         if node in self.vertices:
             # get a list of all edges that the specified node is in
             # todo: this could be more efficient
+            # maybe add a reverse adj dict of things that point to node?
             removal = [edge for edge in self.edges if edge[0] == node or edge[1] == node]
             # then remove them
             for x, y in removal:
