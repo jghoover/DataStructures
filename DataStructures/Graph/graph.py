@@ -107,6 +107,7 @@ class Graph(object):
                 raise ValueError("Node {0} not present in graph".format(repr(node)))
         else:
             # then make sure the edge to be removed is present
+            # maybe change this to looking at the adj list of node1?
             if (node1, node2) not in self.edges:
                 raise ValueError("Edge {0} not present in graph".format(repr((node1, node2))))
             # finally remove the edge
@@ -124,8 +125,8 @@ class Graph(object):
             # todo: this could be more efficient
             removal = [edge for edge in self.edges if edge[0] == node or edge[1] == node]
             # then remove them
-            for edge in removal:
-                self.remove_directed_edge(edge[0], edge[1])
+            for x, y in removal:
+                self.remove_directed_edge(x, y)
 
             del self._graph[node]
         else:
