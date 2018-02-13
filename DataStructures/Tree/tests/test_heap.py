@@ -1,11 +1,11 @@
 import unittest
+from copy import deepcopy
 from DataStructures import Heap
 
 
 # note: excluding sorting methods
 class HeapTestCase(unittest.TestCase):
     def setUp(self):
-        # todo: check min/max: empty heap, heap init. by inserting a bunch, heap init. from an iterable
         self.minEmptyHeap = Heap(max_heap=False)
         self.maxEmptyHeap = Heap(max_heap=True)
 
@@ -18,47 +18,59 @@ class HeapTestCase(unittest.TestCase):
         self.minheap = Heap(max_heap=False)
         self.maxheap = Heap(max_heap=True)
 
-        for num in self.data:
+        for num in deepcopy(self.data):
             self.minheap.insert(num)
             self.maxheap.insert(num)
 
-        self.minIterHeap = Heap(from_list=self.data, max_heap=False)
-        self.maxIterHeap = Heap(from_list=self.data, max_heap=True)
+        self.minIterHeap = Heap(from_list=deepcopy(self.data), max_heap=False)
+        self.maxIterHeap = Heap(from_list=deepcopy(self.data), max_heap=True)
+
+        heaps = [self.minheap, self.maxheap, self.minIterHeap,  self.maxIterHeap, self.minEmptyHeap, self.maxEmptyHeap]
+        names = ["min heap", "max heap", "min iter heap", "max iter heap", "min empty heap", "max empty heap"]
+        self.nonempty = [(heaps[i], names[i]) for i in range(4)]
+        self.empty = [(heaps[i], names[i]) for i in range(4, 6)]
+        self.allheaps = [(heaps[i], names[i]) for i in range(6)]
+
+    @staticmethod
+    def is_heap(heap):
+        for i in range(1, len(heap._h)):
+            for child in [heap._left, heap._right]:
+                # if child is None, we can skip it
+                if child(i):
+                    # continue if heap property is satisfied
+                    # return False if it isn't
+                    if not heap._comp(heap._h[i], heap._h[child(i)]):
+                        return False
+
+        return True
 
     # verify that we actually constructed a heap
     # iterate over parent/children and make sure heap property is satisfied
     def test_is_heap(self):
-        # todo: figure out how to pass a heap to this function and verify it, i.e. for after merge
-        for heap in [self.minheap, self.maxheap, self.minIterHeap, self.maxIterHeap]:
-            with self.subTest(heap=heap):
-                for i in range(1, len(heap._h)):
-                    with self.subTest(i=i):
-                        # if child is None, then we don't care about it
-                        if heap._left(i):
-                            parent = heap._h[i]
-                            child = heap._h[heap._left(i)]
-                            self.assertTrue(heap._comp(parent, child),
-                                            "{0}, {1} unexpectedly violates heap condition for {2}".format(parent,
-                                                                                                           child, heap))
-                        if heap._right(i):
-                            parent = heap._h[i]
-                            child = heap._h[heap._right(i)]
-                            self.assertTrue(heap._comp(parent, child),
-                                            "{0}, {1} unexpectedly violates heap condition for {2}".format(parent,
-                                                                                                           child, heap))
+        for heap, name in self.allheaps:
+            with self.subTest(heap=heap, name=name):
+                # check that it's a heap
+                self.assertTrue(self.is_heap(heap), "{0} unexpectedly not a heap".format(name))
+
+        # verify that if we change the heap data, it becomes no longer a heap
+        for heap, name in self.nonempty:
+            with self.subTest(heap=heap, name=name):
+                heap._h = deepcopy(self.data)
+                heap._h.insert(0, None)
+                self.assertFalse(self.is_heap(heap), "{0} unexpectedly a heap".format(name))
 
     @unittest.skip("Not written")
     def test_add(self):
         pass
 
     def test_bool(self):
-        self.assertTrue(self.minheap, "minheap unexpectedly false")
-        self.assertTrue(self.maxheap, "maxheap unexpectedly false")
-        self.assertTrue(self.minIterHeap, "minIterHeap unexpectedly false")
-        self.assertTrue(self.maxIterHeap, "maxIterHeap unexpectedly false")
+        for heap, name in self.nonempty:
+            with self.subTest(heap=heap, name=name):
+                self.assertTrue(heap, "{0} unexpectedly False".format(name))
 
-        self.assertFalse(self.minEmptyHeap, "minEmptyHeap unexpectedly true")
-        self.assertFalse(self.maxEmptyHeap, "maxEmptyHeap unexpectedly true")
+        for heap, name in self.empty:
+            with self.subTest(heap=heap, name=name):
+                self.assertFalse(heap, "{0} unexpectedly True".format(name))
 
     def test_len(self):
         for heap in [self.minheap, self.maxheap, self.minIterHeap, self.maxIterHeap, self.minEmptyHeap,
@@ -68,14 +80,14 @@ class HeapTestCase(unittest.TestCase):
                 self.assertEqual(len(heap), len(heap._h[1:]), "heap length incorrect")
 
     def test_str(self):
-        for heap in [self.minheap, self.maxheap, self.minIterHeap, self.maxIterHeap, self.minEmptyHeap,
-                     self.maxEmptyHeap]:
+        for heap in self.allheaps:
             with self.subTest(heap=heap):
                 self.assertEqual(str(heap), str(heap._h[1:]), "heap string incorrect")
 
     @unittest.skip("Not written")
     def test_parent(self):
-        pass
+        for heap, name in self.allheaps:
+            pass
 
     @unittest.skip("Not written")
     def test_left(self):

@@ -146,6 +146,9 @@ class Heap(object):
             self._last = len(from_list)
             self._heapify()
 
+    def __iter__(self):
+        return (x for x in self._h[1:])
+
     def __add__(self, other):
         """
         Merge with another heap or iterable.
