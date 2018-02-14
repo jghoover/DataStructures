@@ -104,6 +104,8 @@ class Heap(object):
         return _introsort(iterable, 2 * floor(log2(len(iterable))))
 
     def __init__(self, from_list=None, max_heap=False):
+        # todo: change from 1-indexed to 0-indexed list, and change to bitshifts instead of mult
+        # todo: investigate using loops instead of recursion for bubbleup/bubbledown
         """
         Heap constructor.  Create a min or max heap,
         which may be either empty or initialized to contain
