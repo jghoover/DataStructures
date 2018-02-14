@@ -63,6 +63,7 @@ class Graph(object):
 
     @staticmethod
     def reconstruct_path(destination, parent_dict):
+        # todo: add code to return None if no path exists
         if destination not in parent_dict:
             raise ValueError("Destination {0} not present in dictionary".format(repr(destination)))
 
@@ -178,10 +179,10 @@ class Graph(object):
 
     # runtime: O(V + E) and E \in O(V^2) so O(V^2)
     def depth_first_search(self):
-        return self._dfs()[0]
+        return self._dfs().parent
 
     def topological_sort(self):
-        return self._dfs()[1]
+        return self._dfs().topo
 
     def _dfs(self):
         parent = {}
@@ -204,7 +205,7 @@ class Graph(object):
                 parent[node] = None
                 dfs_visit(node, time)
 
-        return [parent, topo]
+        return namedtuple("DFS", ["parent", "topo"])(parent, topo)
 
     def is_cyclic(self):
         path = set()
@@ -227,11 +228,19 @@ class Graph(object):
 
         return any(visit(node) for node in self.vertices)
 
+    def find_path(self, node1, node2):
+        if self.weighted:
+            parent_dict = self.dijkstra_shortest_path(node1).parent
+        else:
+            parent_dict = self.breadth_first_search(node1).parent
+
+        return Graph.reconstruct_path(node2, parent_dict)
+
     # shortest path on a weighted graph. Dijkstra's Alg
     # runtime: O(E + V log V), but since E \in O(V^2), we get
     #    O(V^2) essentially.
     # Dijkstra's algorithm
-    def shortest_path(self, source):
+    def weighted_shortest_path(self, source):
         q = PriorityQueue()
 
         dist = {}
