@@ -5,24 +5,34 @@ from DataStructures import PriorityQueue
 
 class Graph(object):
     # todo: ideally, you wouldn't have to specify a graph as weighted
-    # todo: make init more efficient
+    # todo: make sure the new __init__ actually works with the rewritten adding nodes/edges
     def __init__(self, graph_data=None, weighted=False):
 
         if graph_data is None:
             graph_data = {}
 
-        self._graph = {}
-        self._edges = []
+        self._adj = {}
+        self._pred = {}
         self._weight = {}
-        self._weighted = weighted
-        # add vertices
-        for node in list(graph_data.keys()):
-            self._graph[node] = []
 
-        # add edges
-        for node in self.vertices:
+        self._weighted = weighted
+
+        # add vertices
+        # for node in list(graph_data.keys()):
+        #     self.add_node(node)
+
+        # add nodes and edges
+        for node in graph_data.keys():
+            # add node, if not already present
+            if node not in self:
+                self.add_node(node)
+
             for adj in graph_data[node]:
-                if weighted:
+                # add adj, if not already present
+                if adj not in self:
+                    self.add_node(adj)
+
+                if self.weighted:
                     neighbor, weight = adj
                 else:
                     neighbor = adj
@@ -31,24 +41,31 @@ class Graph(object):
                 self.add_directed_edge(node, neighbor, weight)
 
     def __contains__(self, item):
-        return item in self.vertices
+        return item in self._adj
 
     def __iter__(self):
-        return iter(self.vertices)
+        return iter(self._adj)
 
     def __len__(self):
-        return len(self.vertices)
+        return len(self._adj)
 
     @property
     def vertices(self):
-        return list(self._graph.keys())
+        return list(self._adj.keys())
 
     @property
     def edges(self):
-        return self._edges
+        return self._adj.items()
+
+    @property
+    def weighted(self):
+        return self._weighted
 
     @staticmethod
     def reconstruct_path(destination, parent_dict):
+        if destination not in parent_dict:
+            raise ValueError("Destination {0} not present in dictionary".format(repr(destination)))
+
         path = []
 
         def recon(node):
@@ -62,11 +79,17 @@ class Graph(object):
         return recon(0, destination)
 
     def adj(self, node):
-        return self._graph[node]
+        return self._adj[node]
+
+    def pred(self, node):
+        return self._pred[node]
+
+    def is_adj(self, node1, node2):
+        return node2 in self._adj[node1]
 
     # get the weight of an edge between node1, node2
     def weight(self, node1, node2):
-        if self._weighted:
+        if self.weighted:
             weight = self._weight[(node1, node2)]
         else:
             weight = 1
@@ -75,26 +98,23 @@ class Graph(object):
 
     def add_node(self, node):
         # add an unconnected vertex to the graph
-        if node not in self.vertices:
-            self._graph[node] = []
+        if node not in self:
+            self._adj[node] = []
+            self._pred[node] = []
         else:
             raise ValueError("Node {0} already present in graph".format(repr(node)))
 
     def add_directed_edge(self, node1, node2, weight=None):
         # add an edge between two vertices, node1 and node1, with optional weight
-        # todo: this could probably be written better
         for node in [node1, node2]:
-            if node not in self.vertices:
+            if node not in self:
                 raise ValueError("Node {0} not present in the graph".format(repr(node)))
         else:
-            if not weight:
-                self._graph[node1].append(node2)
-
-            if weight:
+            if self.weighted:
                 self._weight[(node1, node2)] = weight
-                self._graph[node1].append((node2, weight))
 
-            self._edges.append((node1, node2))
+            self._adj[node1].append(node2)
+            self._pred[node2].append(node1)
 
     def add_undirected_edge(self, node1, node2, weight=None):
         self.add_directed_edge(node1, node2, weight)
@@ -103,33 +123,36 @@ class Graph(object):
     def remove_directed_edge(self, node1, node2):
         # make sure nodes are present
         for node in [node1, node2]:
-            if node not in self.vertices:
+            if node not in self:
                 raise ValueError("Node {0} not present in graph".format(repr(node)))
+
+        if self.is_adj(node1, node2):
+            self._adj[node1].remove(node2)
+            self._pred[node2].remove(node1)
+            if self.weighted:
+                del self._weight[(node1, node2)]
         else:
-            # then make sure the edge to be removed is present
-            # maybe change this to looking at the adj list of node1?
-            if (node1, node2) not in self.edges:
-                raise ValueError("Edge {0} not present in graph".format(repr((node1, node2))))
-            # finally remove the edge
-            else:
-                self._edges.remove((node1, node2))
-                self._graph[node1].remove(node2)
+            raise ValueError("Edge {0} not present in graph".format(repr((node1, node2))))
 
     def remove_undirected_edge(self, node1, node2):
         self.remove_directed_edge(node1, node2)
         self.remove_directed_edge(node2, node1)
 
     def remove_node(self, node):
-        if node in self.vertices:
-            # get a list of all edges that the specified node is in
-            # todo: this could be more efficient
-            # maybe add a reverse adj dict of things that point to node?
-            removal = [edge for edge in self.edges if edge[0] == node or edge[1] == node]
-            # then remove them
+        if node in self:
+            # get vertices that node points to
+            removal = [(node, neighbor) for neighbor in self.adj(node)]
+            # get vertices that point to node
+            # todo: make sure that this doesn't screw up with undirected graphs
+            removal.extend([(neighbor, node) for neighbor in self.pred(node)])
+
+            # then get rid of the edges
             for x, y in removal:
                 self.remove_directed_edge(x, y)
 
-            del self._graph[node]
+            # then clear out node's dict entries
+            del self._adj[node]
+            del self._pred[node]
         else:
             raise ValueError("Node {0} not present in graph".format(repr(node)))
 
@@ -166,7 +189,6 @@ class Graph(object):
         topo = []
 
         # iterate over neighbors of node
-        # todo: check if time needs to be passed as a variable
         def dfs_visit(node, time):
             time += 1
             for neighbor in self.adj(node):
@@ -238,5 +260,10 @@ class Graph(object):
 
         return namedtuple("Shortest_Path", ["length", "parent"])(dist, parent)
 
+    # todo: write this
     def contract_edge(self, node1, node2):
+        pass
+
+    # todo: write this
+    def classify_edges(self):
         pass
