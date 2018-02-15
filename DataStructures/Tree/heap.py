@@ -103,6 +103,33 @@ class Heap(object):
 
         return _introsort(iterable, 2 * floor(log2(len(iterable))))
 
+    @staticmethod
+    def select_k(iterable, k, largest=False):
+        # todo: write this!  Naive: heapify iterable and then do k extracts: O(n + k log n), but can probably be better
+        # todo: figure out the bound at which doing this is more efficient than doing a sort: k << n
+        # it might always be efficient---finding the n-10 largest things is the same as finding
+        # the 10 smallest things and excluding them
+        """
+        Select the `k` smallest/largest elements from dataset `iterable`.
+        Runtime: ???
+
+        Parameters
+        ----------
+        iterable : iter
+            Dataset to select elements from.
+        k : int
+            Number of elements to select from the dataset.
+        largest : bool, optional
+            If `True`, select the `k` largest elements from `iterable`.  If `False`, select the `k` smallest.  Defaults
+            to `False`.
+
+        Returns
+        -------
+        list
+            The `k` smallest (if `largest` is `False`) or largest (if `largest` is `True`) elements from `iterable`.
+        """
+        pass
+
     def __init__(self, from_list=None, max_heap=False):
         # todo: change from 1-indexed to 0-indexed list, and change to bitshifts instead of mult
         # todo: investigate using loops instead of recursion for bubbleup/bubbledown
