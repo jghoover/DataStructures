@@ -104,14 +104,19 @@ class Heap(object):
         return _introsort(iterable, 2 * floor(log2(len(iterable))))
 
     @staticmethod
-    def select_k(iterable, k, largest=False):
-        # todo: write this!  Naive: heapify iterable and then do k extracts: O(n + k log n), but can probably be better
+    def select_k(iterable, k, comparison=None, largest=False):
         # todo: figure out the bound at which doing this is more efficient than doing a sort: k << n
-        # it might always be efficient---finding the n-10 largest things is the same as finding
-        # the 10 smallest things and excluding them
+        # idea: heapify the first k items of the list, using the opposite ordered as desired
+        # (i.e. max heap if largest is False) then loop over the rest of the list, doing a replace_root if the next
+        # item is < (or > if largest is True) for the rest of the list.  Then return heap.data
+        # analysis:
+        # O(k) : build a heap of the first k elements
+        # + O(n-k) : loop through the rest of the elements
+        # * O(log k) : if every one of the rest of the elements needs to be put in the heap
+        # = O(k + (n-k)log k) = O(k + n log k - k log k) = O(n log k)
         """
         Select the `k` smallest/largest elements from dataset `iterable`.
-        Runtime: ???
+        Runtime: O(n log k)
 
         Parameters
         ----------
@@ -122,17 +127,39 @@ class Heap(object):
         largest : bool, optional
             If `True`, select the `k` largest elements from `iterable`.  If `False`, select the `k` smallest.  Defaults
             to `False`.
+        comparison : function, optional
+            Specify how to compare the elements of `iterable`.  Defaults to `None`, representing normal less/greater
+            than comparison.
+
 
         Returns
         -------
         list
             The `k` smallest (if `largest` is `False`) or largest (if `largest` is `True`) elements from `iterable`.
         """
-        pass
+
+        if k < 0 or k > len(iterable):
+            raise ValueError("k must be in the range [0, len(iterable)={0}]".format(len(iterable)))
+
+        if not comparison:
+            if largest:
+                comparison = gt
+            else:
+                comparison = lt
+
+        # logic to check if it's more efficient to just use a sorting algorithm---k ~ n
+        # todo: investigate what this bound on k needs to be
+        heap = Heap(iterable[:k], not largest)
+        for element in iterable[k:]:
+            if comparison(element, heap.peek()):
+                heap.replace_root(element)
+
+        return heap.data
 
     def __init__(self, from_list=None, max_heap=False):
         # todo: change from 1-indexed to 0-indexed list, and change to bitshifts instead of mult
-        # todo: investigate using loops instead of recursion for bubbleup/bubbledown
+        # todo: investigate using loops instead of recursion for bubbleup/bubbledown to prevent stack badness
+        # todo: modify this to take a comparison key?
         """
         Heap constructor.  Create a min or max heap,
         which may be either empty or initialized to contain
@@ -199,6 +226,10 @@ class Heap(object):
     # indexing starts at 1, so only return slice starting at 1
     def __str__(self):
         return str(self._h[1:])
+
+    @property
+    def data(self):
+        return self._h[1:]
 
     def _parent(self, i):
         """
@@ -387,6 +418,18 @@ class Heap(object):
         """
         if self.is_empty():
             raise IndexError("Cannot peek from empty heap")
+
+        return self._h[1]
+
+    def replace_root(self, item):
+        # todo: make sure this works
+        # remove the root and replace it with a new value, then bubbledown, which is faster than extracting followed by
+        # inserting a new value
+        if self.is_empty():
+            raise IndexError("No root to replace")
+
+        self._h[1] = item
+        self._bubbledown(1)
 
     def merge(self, other):
         """
@@ -599,7 +642,6 @@ class PriorityQueue(Heap):
         See Also
         --------
         __setitem__ : Syntactic sugar for adding an item to the Priority Queue or updating its priority.
-        bubbleup : Repair the Priority Queue after `insert()`.
         """
         self._last += 1
         self._h.append((key, item))
@@ -620,10 +662,6 @@ class PriorityQueue(Heap):
         ------
         IndexError
             If the Priority Queue is empty.
-
-        See Also
-        --------
-        bubbledown : repair the Priority Queue after `extract()`.
         """
         if self.is_empty():
             raise IndexError("Cannot extract from empty Priority Queue")
@@ -668,8 +706,9 @@ class PriorityQueue(Heap):
         """
         if self.is_empty():
             raise IndexError("Cannot peek from empty Priority Queue")
-        else:
-            return self._h[1]
+
+        # todo: make sure this doesn't return the priority, just the item
+        return self._h[1]
 
     def get_priority(self, item):
         """
