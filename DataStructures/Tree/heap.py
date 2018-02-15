@@ -1,5 +1,5 @@
-from operator import lt, gt
 from math import log2, floor, inf
+from operator import lt, gt
 
 
 class Heap(object):
@@ -152,7 +152,7 @@ class Heap(object):
         heap = Heap(iterable[:k], not largest)
         for element in iterable[k:]:
             if comparison(element, heap.peek()):
-                heap.replace_root(element)
+                heap.extract_insert(element)
 
         return heap.data
 
@@ -167,7 +167,7 @@ class Heap(object):
 
         Parameters
         ----------
-        from_list : list, optional
+        from_list : iterable, optional
             Initialize the heap with these values.  Defaults to `None`.
 
         max_heap : bool, optional
@@ -400,6 +400,52 @@ class Heap(object):
         self._bubbledown(1)
         return temp
 
+    def extract_insert(self, item):
+        """
+        Remove and return the root, and insert a new item.
+        Faster than explicitly calling an extract followed by an insert.
+
+        Parameters
+        ----------
+        item : object
+            Element to be added to the heap.
+
+        Returns
+        -------
+        object
+            The element at the root of the heap, before inserting `item`.
+
+        """
+        if self.is_empty():
+            raise IndexError("Cannot extract from empty heap")
+
+        toReturn = self._h[1]
+        self._h[1] = item
+        self._bubbledown(1)
+        return toReturn
+
+    def insert_extract(self, item):
+        """
+        Insert a new item and extract, and remove and return the root.
+        Faster than explicitly calling an insert followed by an extract.
+
+        Parameters
+        ----------
+        item : object
+            Element to be added to the heap.
+
+        Returns
+        -------
+        object
+            The element at the root of the heap, after inserting `item`.
+        """
+        # if the heap is empty, or the item will end up as the root, then there's no point in modifying the heap
+        if not self.is_empty() and self._comp(self._h[1], item):
+            self._h[1], item = item, self._h[1]
+            self._bubbledown(1)
+
+        return item
+
     def peek(self):
         """
         Get the next item from the heap, without removing it.
@@ -420,16 +466,6 @@ class Heap(object):
             raise IndexError("Cannot peek from empty heap")
 
         return self._h[1]
-
-    def replace_root(self, item):
-        # todo: make sure this works
-        # remove the root and replace it with a new value, then bubbledown, which is faster than extracting followed by
-        # inserting a new value
-        if self.is_empty():
-            raise IndexError("No root to replace")
-
-        self._h[1] = item
-        self._bubbledown(1)
 
     def merge(self, other):
         """
