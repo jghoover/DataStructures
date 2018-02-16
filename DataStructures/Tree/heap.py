@@ -28,7 +28,12 @@ class Heap(object):
         or in nonincreasing order (if `reversed` is True).
         """
 
-        h = Heap(from_list=iterable, max_heap=reversed)
+        # todo: rewrite this to take key for sorting
+        if reversed:
+            comparison = gt
+        else:
+            comparison = lt
+        h = Heap(from_list=iterable, comparison=comparison)
         temp = []
 
         while not h.is_empty():
@@ -104,7 +109,7 @@ class Heap(object):
         return _introsort(iterable, 2 * floor(log2(len(iterable))))
 
     @staticmethod
-    def select_k(iterable, k, comparison=None, largest=False):
+    def select_k(iterable, k, comparison=None):
         # todo: figure out the bound at which doing this is more efficient than doing a sort: k << n
         # idea: heapify the first k items of the list, using the opposite ordered as desired
         # (i.e. max heap if largest is False) then loop over the rest of the list, doing a replace_root if the next
@@ -124,9 +129,6 @@ class Heap(object):
             Dataset to select elements from.
         k : int
             Number of elements to select from the dataset.
-        largest : bool, optional
-            If `True`, select the `k` largest elements from `iterable`.  If `False`, select the `k` smallest.  Defaults
-            to `False`.
         comparison : function, optional
             Specify how to compare the elements of `iterable`.  Defaults to `None`, representing normal less/greater
             than comparison.
@@ -142,24 +144,19 @@ class Heap(object):
             raise ValueError("k must be in the range [0, len(iterable)={0}]".format(len(iterable)))
 
         if not comparison:
-            if largest:
-                comparison = gt
-            else:
-                comparison = lt
+            comparison = lt
 
         # logic to check if it's more efficient to just use a sorting algorithm---k ~ n
         # todo: investigate what this bound on k needs to be
-        heap = Heap(iterable[:k], not largest)
+        heap = Heap(iterable[:k], comparison=comparison)
         for element in iterable[k:]:
             if comparison(element, heap.peek()):
                 heap.extract_insert(element)
 
         return heap.data
 
-    def __init__(self, from_list=None, max_heap=False):
-        # todo: change from 1-indexed to 0-indexed list, and change to bitshifts instead of mult
+    def __init__(self, from_list=None, comparison=None):
         # todo: investigate using loops instead of recursion for bubbleup/bubbledown to prevent stack badness
-        # todo: modify this to take a comparison key?
         """
         Heap constructor.  Create a min or max heap,
         which may be either empty or initialized to contain
@@ -170,9 +167,8 @@ class Heap(object):
         from_list : iterable, optional
             Initialize the heap with these values.  Defaults to `None`.
 
-        max_heap : bool, optional
-            Specify the heap to be a maximum heap.
-            Defaults to False, signifying a minimum heap.
+        comparison : function, optional
+            Specify how to compare items in the heap.  Default of `None` indicates operator.lt
 
         Other Parameters
         ----------------
@@ -186,24 +182,21 @@ class Heap(object):
             Represents if the heap is a max or min heap.
         """
 
-        self._max_heap = max_heap
-
-        if self._max_heap:
-            self._comp = gt
-        else:
-            self._comp = lt
+        if not comparison:
+            comparison = lt
+        self._comp = comparison
 
         # 0-index is never used, so just put none there
-        self._h = [None, ]
-        self._last = 0
+        self._h = []
+        self._last = -1
 
         if from_list:
             self._h += from_list
-            self._last = len(from_list)
+            self._last = len(from_list) - 1
             self._heapify()
 
     def __iter__(self):
-        return (x for x in self._h[1:])
+        return (x for x in self._h)
 
     def __add__(self, other):
         """
@@ -218,18 +211,18 @@ class Heap(object):
 
     # return True iff there is at least one item on the heap
     def __bool__(self):
-        return not self.is_empty()
+        return bool(self._h)
 
     def __len__(self):
-        return self._last
+        return len(self._h)
 
     # indexing starts at 1, so only return slice starting at 1
     def __str__(self):
-        return str(self._h[1:])
+        return str(self._h)
 
     @property
     def data(self):
-        return self._h[1:]
+        return self._h
 
     def _parent(self, i):
         """
@@ -245,7 +238,7 @@ class Heap(object):
         int
             The index of the parent node of `i`.
         """
-        return i // 2
+        return (i - 1) // 2
 
     def _left(self, i):
         """
@@ -262,7 +255,7 @@ class Heap(object):
             The index of the left child of the specified node,
             or `None` if there is no child.
         """
-        lc = 2 * i
+        lc = 2 * i + 1
         return lc if lc <= self._last else None
 
     def _right(self, i):
@@ -281,7 +274,7 @@ class Heap(object):
             or `None` if there is no child.
 
         """
-        rc = 2 * i + 1
+        rc = 2 * i + 2
         return rc if rc <= self._last else None
 
     def _swap(self, i, j):
@@ -307,8 +300,7 @@ class Heap(object):
         i : int
             The index to start bubbling up from.
         """
-        if i == 1 or \
-                (self._comp(self._h[self._parent(i)], self._h[i])):
+        if i == 0 or (self._comp(self._h[self._parent(i)], self._h[i])):
             return i
 
         self._swap(i, self._parent(i))
@@ -355,7 +347,7 @@ class Heap(object):
 
         Runtime O(n)
         """
-        for i in range(self._parent(self._last), 0, -1):
+        for i in range(self._parent(self._last), -1, -1):
             self._bubbledown(i)
 
     def insert(self, item):
@@ -391,13 +383,13 @@ class Heap(object):
         if self.is_empty():
             raise IndexError("Cannot extract from empty heap")
 
-        temp = self._h[1]
+        temp = self._h[0]
         # pull up last data to new root
-        self._swap(1, self._last)
+        self._swap(0, self._last)
         self._last -= 1
         # remove old last
         self._h.pop()
-        self._bubbledown(1)
+        self._bubbledown(0)
         return temp
 
     def extract_insert(self, item):
@@ -419,9 +411,9 @@ class Heap(object):
         if self.is_empty():
             raise IndexError("Cannot extract from empty heap")
 
-        toReturn = self._h[1]
-        self._h[1] = item
-        self._bubbledown(1)
+        toReturn = self._h[0]
+        self._h[0] = item
+        self._bubbledown(0)
         return toReturn
 
     def insert_extract(self, item):
@@ -440,9 +432,9 @@ class Heap(object):
             The element at the root of the heap, after inserting `item`.
         """
         # if the heap is empty, or the item will end up as the root, then there's no point in modifying the heap
-        if not self.is_empty() and self._comp(self._h[1], item):
-            self._h[1], item = item, self._h[1]
-            self._bubbledown(1)
+        if not self.is_empty() and self._comp(self._h[0], item):
+            self._h[0], item = item, self._h[0]
+            self._bubbledown(0)
 
         return item
 
@@ -465,7 +457,7 @@ class Heap(object):
         if self.is_empty():
             raise IndexError("Cannot peek from empty heap")
 
-        return self._h[1]
+        return self._h[0]
 
     def merge(self, other):
         """
@@ -490,24 +482,11 @@ class Heap(object):
         bool
             True if there are items in the heap, false otherwise.
         """
-        return self._last <= 0
-
-    def get_kind(self):
-        """
-        Check the kind of the heap (minimum or maximum).
-
-        Returns
-        -------
-        str
-            The string "Maximum" if the heap is a max heap.
-            The string "Minimum" if the heap is a min heap.
-
-        """
-        return "Maximum" if self._max_heap else "Minimum"
+        return self._last < 0
 
     def make_empty(self):
-        self._h = [None, ]
-        self._last = 0
+        self._h = []
+        self._last = -1
 
 
 class PriorityQueue(Heap):
@@ -523,6 +502,9 @@ class PriorityQueue(Heap):
     """
 
     def __init__(self, from_list=None, max_heap=False):
+        # todo: move Other Parameters to class docstring
+        # todo: rewrite PriorityQueue in a more OOP manner, or make it its own class
+        # todo: rewrite PQ with changes made to heap
         """
         Initialize a new Priority Queue.
 
@@ -533,7 +515,6 @@ class PriorityQueue(Heap):
         max_heap : bool, optional
             If true, initialize heap as a max heap, otherwise initialize a min heap. Defaults to False.
 
-        todo: move other parameters to class docstring
         Other Parameters
         ----------------
         _h : list
@@ -554,7 +535,7 @@ class PriorityQueue(Heap):
             The maximum value any priority can take.  `-inf` for min heaps, and `inf` for max
             heaps.  Used in `remove()`.
         """
-        self._h = [None, ]
+        self._h = []
         self._index = {}
         self._last = 0
         self._max_heap = max_heap
@@ -628,7 +609,7 @@ class PriorityQueue(Heap):
         update_key : Method to change the priority of an arbitrary item.
         """
         if key in self:
-            self.update_key(key, value)
+            self.update_priority(key, value)
         else:
             self.insert(key, value)
 
@@ -776,7 +757,7 @@ class PriorityQueue(Heap):
         index = self._index[item]
         return self._h[index][0]
 
-    def update_key(self, item, key):
+    def update_priority(self, item, priority):
         """
         Change the priority of an arbitrary element Priority Queue element `item`.  If duplicate instances of `item`
         are present, no guarantees are made as to which instance will be updated.
@@ -786,7 +767,7 @@ class PriorityQueue(Heap):
         ----------
         item
             The element of the heap whose priority we are updating
-        key
+        priority
             The new priority of `item`
 
         Raises
@@ -803,10 +784,10 @@ class PriorityQueue(Heap):
 
         index = self._index[item]
         oldKey = self._h[index][0]
-        self._h[index] = (key, item)
+        self._h[index] = (priority, item)
 
         # is there a better way to write this mess of conditionals?
-        if key < oldKey:
+        if priority < oldKey:
             if self._max_heap:
                 self._bubbledown(index)
             else:
@@ -818,6 +799,9 @@ class PriorityQueue(Heap):
                 self._bubbledown(index)
 
     def remove(self, item):
+        # todo: rewrite this.
+        # Instead of using prioritized, just swap with last, pop _h, and compare the old last with its new parent.
+        # If comp(old_last, parent) is true (i.e. old_last < parent), then bubbleup, else bubbledown.
         """
         Remove a single instance of `item` from the Priority Queue.  If duplicate instances of `item` are present, no
         guarantees are made as to which instance will be removed.
@@ -841,5 +825,5 @@ class PriorityQueue(Heap):
         if item not in self:
             raise KeyError("Item {0} not present in Priority Queue".format(repr(item)))
 
-        self.update_key(item, self._prioritized)
+        self.update_priority(item, self._prioritized)
         self.extract()
