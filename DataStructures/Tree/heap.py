@@ -182,8 +182,9 @@ class Heap(object):
             Represents if the heap is a max or min heap.
         """
 
-        if not comparison:
+        if comparison is None:
             comparison = lt
+
         self._comp = comparison
 
         # 0-index is never used, so just put none there
@@ -300,11 +301,13 @@ class Heap(object):
         i : int
             The index to start bubbling up from.
         """
-        if i == 0 or (self._comp(self._h[self._parent(i)], self._h[i])):
+        parent = self._parent(i)
+
+        if i == 0 or (self._comp(self._h[parent], self._h[i])):
             return i
 
-        self._swap(i, self._parent(i))
-        return self._bubbleup(self._parent(i))
+        self._swap(i, parent)
+        return self._bubbleup(parent)
 
     def _bubbledown(self, i):
         """
@@ -320,11 +323,11 @@ class Heap(object):
         rc = self._right(i)
 
         # no left child, so we're done.
-        if not lc:
+        if lc is None:
             return
 
         # right child exists and...
-        if rc:
+        if rc is not None:
             # h[rc] < h[lc] (min heap)
             # h[rc] > h[lc] (max heap)
             if self._comp(self._h[rc], self._h[lc]):

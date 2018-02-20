@@ -7,7 +7,8 @@ from DataStructures import PriorityQueue
 class Graph(object):
     # todo: ideally, you wouldn't have to specify a graph as weighted
     # todo: make sure the new __init__ actually works with the rewritten adding nodes/edges
-    # todo: should I have a separate class for digraph?
+    # todo: should I have a separate class for digraph/multigraph?
+    # todo: add more features to make this more like networkx
     def __init__(self, graph_data=None, weighted=False):
 
         if graph_data is None:
@@ -67,6 +68,7 @@ class Graph(object):
     def reconstruct_path(destination, parent_dict):
         # todo: add code to return None if no path exists
         # todo: destination not in parent_dict should probably return None as well?
+        # todo: rewrite this
         if destination not in parent_dict:
             raise ValueError("Destination {0} not present in dictionary".format(repr(destination)))
 
@@ -78,9 +80,9 @@ class Graph(object):
             if not parent_dict[node]:
                 return path
 
-            return recon(node, parent_dict[node])
+            return recon(node)
 
-        return recon(0, destination)
+        return recon(destination)
 
     def adj(self, node):
         return self._adj[node]
@@ -162,7 +164,7 @@ class Graph(object):
 
     # runtime O(V + E) and E \in O(V^2) so O(V^2)
     def breadth_first_search(self, node):
-        # maybe modify this so that it doesn't return the namedtuple?
+        # todo: merge this into shortest_path and shortest_path_length
         level = {node: 0}
         parent = {node: None}
         i = 1
@@ -231,26 +233,21 @@ class Graph(object):
 
         return any(visit(node) for node in self.vertices)
 
-    def find_path(self, node1, node2):
-        if self.weighted:
-            parent_dict = self.dijkstra_shortest_path(node1).parent
-        else:
-            parent_dict = self.breadth_first_search(node1).parent
+    @staticmethod
+    def _return_zero(*_):
+        return 0
 
-        return Graph.reconstruct_path(node2, parent_dict)
-
-    # A* graph algorithm
+    # A* graph search algorithm
     def a_star(self, source, destination, heuristic=None):
-        # todo: write this.  Figure out what to use for heuristic if it's None. Graph distance maybe?
 
-        if not heuristic:
-            # i don't know that I like this better than a lambda---also, can I use underscores like this?
-            def heuristic(_0, _1):
-                return 0
+        # default heuristic is h=0, which makes A* behave like Dijkstra's
+        if heuristic is None:
+            heuristic = Graph._return_zero
 
         closed = []
         pq = PriorityQueue()
 
+        # for reconstructing paths
         parent = {}
 
         # cost of going from source to node
@@ -298,10 +295,22 @@ class Graph(object):
         # didn't find a path
         return None
 
-    def shortest_path(self, source, destination):
+    def shortest_path(self, source=None, destination=None):
         # todo: write this.
         # use two-way dijkstra's to find a weighted shortest path
         # use two-way BFS to find unweighted shortest path
+        # if neither source nor destination are specified, compute shortest path from every node to every other node
+        #     return a dict with keys of sources and values of dicts with keys of destinations with values of lists
+        #     containing the nodes in the path
+        # if only source is specified, compute shortest path from source to every other node
+        #     return a dict with keys of destinations and values of lists containing the nodes in the path
+        # if only destination is specified, compute the shortest path from every node to destination
+        #     return a dict with keys of sources and values of lists containing the nodes in the path
+        pass
+
+    def shortest_path_length(self, source=None, destination=None):
+        # todo: write this
+        # same as shortest_path
         pass
 
     # shortest path on a weighted graph. Dijkstra's Alg
@@ -309,6 +318,7 @@ class Graph(object):
     #    O(V^2) essentially.
     # Dijkstra's algorithm
     def weighted_shortest_paths(self, source):
+        # todo: merge this into shortest_path and shortest_path_length
         pq = PriorityQueue()
 
         dist = {}
@@ -333,7 +343,7 @@ class Graph(object):
                 if length < dist[neighbor]:
                     dist[neighbor] = length
                     parent[neighbor] = node
-                    pq.update_key(neighbor, length)
+                    pq.update_priority(neighbor, length)
 
         return namedtuple("Shortest_Path", ["length", "parent"])(dist, parent)
 
