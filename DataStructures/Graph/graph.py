@@ -1,11 +1,13 @@
 from collections import namedtuple
 from math import inf
+
 from DataStructures import PriorityQueue
 
 
 class Graph(object):
     # todo: ideally, you wouldn't have to specify a graph as weighted
     # todo: make sure the new __init__ actually works with the rewritten adding nodes/edges
+    # todo: should I have a separate class for digraph?
     def __init__(self, graph_data=None, weighted=False):
 
         if graph_data is None:
@@ -64,6 +66,7 @@ class Graph(object):
     @staticmethod
     def reconstruct_path(destination, parent_dict):
         # todo: add code to return None if no path exists
+        # todo: destination not in parent_dict should probably return None as well?
         if destination not in parent_dict:
             raise ValueError("Destination {0} not present in dictionary".format(repr(destination)))
 
@@ -236,12 +239,77 @@ class Graph(object):
 
         return Graph.reconstruct_path(node2, parent_dict)
 
+    # A* graph algorithm
+    def a_star(self, source, destination, heuristic=None):
+        # todo: write this.  Figure out what to use for heuristic if it's None. Graph distance maybe?
+
+        if not heuristic:
+            # i don't know that I like this better than a lambda---also, can I use underscores like this?
+            def heuristic(_0, _1):
+                return 0
+
+        closed = []
+        pq = PriorityQueue()
+
+        parent = {}
+
+        # cost of going from source to node
+        dist = {source: 0}
+
+        # total cost of getting from source to destination by passing through node
+        estimate = {}
+
+        for node in self.vertices:
+            if node == source:
+                dist[node] = 0
+                estimate[node] = heuristic(node, destination)
+            else:
+                dist[node] = inf
+                estimate[node] = inf
+
+        pq.insert(source, estimate[source])
+
+        while pq:
+            node = pq.extract()
+
+            # yay, we made it!
+            if node == destination:
+                return Graph.reconstruct_path(destination, parent)
+
+            closed.append(node)
+
+            for neighbor in self.adj(node):
+                if neighbor in closed:
+                    continue
+                if neighbor not in pq:
+                    pq.insert(neighbor, estimate[neighbor])
+
+                # check the distance from source to neighbor
+                # todo: make sure that weight is what I actually want here
+                length = dist[node] + self.weight(node, neighbor)
+
+                # update!
+                if length < dist[neighbor]:
+                    parent[neighbor] = node
+                    dist[neighbor] = length
+                    estimate[neighbor] = length + heuristic(neighbor, destination)
+                    pq.update_priority(neighbor, estimate[neighbor])
+
+        # didn't find a path
+        return None
+
+    def shortest_path(self, source, destination):
+        # todo: write this.
+        # use two-way dijkstra's to find a weighted shortest path
+        # use two-way BFS to find unweighted shortest path
+        pass
+
     # shortest path on a weighted graph. Dijkstra's Alg
     # runtime: O(E + V log V), but since E \in O(V^2), we get
     #    O(V^2) essentially.
     # Dijkstra's algorithm
-    def weighted_shortest_path(self, source):
-        q = PriorityQueue()
+    def weighted_shortest_paths(self, source):
+        pq = PriorityQueue()
 
         dist = {}
         parent = {}
@@ -254,10 +322,10 @@ class Graph(object):
 
             parent[v] = None
 
-            q.insert(v, dist[v])
+            pq.insert(v, dist[v])
 
-        while not q.is_empty():
-            node = q.extract()
+        while pq:
+            node = pq.extract()
 
             for neighbor in self.adj(node):
                 length = dist[node] + self.weight(node, neighbor)
@@ -265,7 +333,7 @@ class Graph(object):
                 if length < dist[neighbor]:
                     dist[neighbor] = length
                     parent[neighbor] = node
-                    q.update_key(neighbor, length)
+                    pq.update_key(neighbor, length)
 
         return namedtuple("Shortest_Path", ["length", "parent"])(dist, parent)
 
