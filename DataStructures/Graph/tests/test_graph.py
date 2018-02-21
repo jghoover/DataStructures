@@ -1,4 +1,5 @@
 import unittest
+
 from DataStructures import Graph
 
 
@@ -209,30 +210,8 @@ class GraphTestCase(unittest.TestCase):
                                msg="ValueError unexpectedly not raised when removing nonexistent node"):
             self.graph.remove_node("z")
 
-    @unittest.skip("skipping BFS...test not written")
-    def test_breadth_first_search(self):
-        pass
-
-    @unittest.skip("skipping DFS...test not written")
-    def test_depth_first_search(self):
-        pass
-
-    @unittest.skip("skipping topological sort...test not written")
-    def test_topological_sort(self):
-        pass
-
-    @unittest.skip("skipping _dfs...test not written")
-    # dfs/topo-sort helper function
-    def test_dfs(self):
-        pass
-
     def test_is_cyclic(self):
         self.assertTrue(self.graph.is_cyclic(), "graph unexpectedly acyclic")
         self.assertTrue(self.digraph.is_cyclic(), "digraph unexpectedly acyclic")
         self.assertFalse(self.DAG.is_cyclic(), "DAG unexpectedly cyclic")
 
-    # todo: rewrite Graph.shortest_path() so that it works
-    # todo: rewrite Graph so it handles weighted graphs
-    @unittest.skip("skipping shortest path...graph class doesn't handle weighted edges yet")
-    def test_shortest_path(self):
-        pass
