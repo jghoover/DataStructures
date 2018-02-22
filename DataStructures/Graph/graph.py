@@ -19,6 +19,7 @@ class Graph(object):
         self._adj = {}
         self._pred = {}
         self._weight = {}
+        self._ecc = None
 
         self._weighted = weighted
 
@@ -44,6 +45,20 @@ class Graph(object):
 
                 self.add_directed_edge(node, neighbor, weight)
 
+    def _maximally_connected(self):
+        # return the maximally connected subset of self.vertices
+        # could compute the multiplicity of 0 as an eigenvalue of the Laplacean matrix of the graph
+        # probably easier to just do DFS or BFS and see if everything is reached
+        pass
+
+    @classmethod
+    def induced_subgraph(cls, graph, filter_nodes=None):
+        # construct a new subgraph from `graph`, based on nodes that satisfy `filter`
+        if filter_nodes is None:
+            filter_nodes = Graph._maximally_connected
+        vertices = filter_nodes(graph.vertices)
+        pass
+
     def __contains__(self, item):
         return item in self._adj
 
@@ -51,7 +66,7 @@ class Graph(object):
         return iter(self._adj)
 
     def __len__(self):
-        return len(self._adj)
+        return self.order
 
     @property
     def vertices(self):
@@ -130,6 +145,8 @@ class Graph(object):
         else:
             raise ValueError("Node {0} already present in graph".format(repr(node)))
 
+        self._ecc = None
+
     # add edges from an iterable.  elements of the iterable should be of the form (node1, node2, optional(weight))
     def add_directed_edges(self, edges):
         for edge in edges:
@@ -152,6 +169,8 @@ class Graph(object):
 
             self._adj[node1].append(node2)
             self._pred[node2].append(node1)
+
+        self._ecc = None
 
     def add_undirected_edges(self, edges):
         for edge in edges:
@@ -186,6 +205,8 @@ class Graph(object):
         else:
             raise ValueError("Edge {0} not present in graph".format(repr((node1, node2))))
 
+        self._ecc = None
+
     def remove_undirected_edges(self, edges):
         for edge in edges:
             node1, node2 = edge
@@ -217,18 +238,23 @@ class Graph(object):
         else:
             raise ValueError("Node {0} not present in graph".format(repr(node)))
 
+        self._ecc = None
+
     # runtime O(V + E) and E \in O(V^2) so O(V^2)
     def breadth_first_search(self, node, destination=None):
         # todo: merge this into shortest_path and shortest_path_length
-        level = {node: 0}
-        parent = {node: None}
+        level = dict.fromkeys(self.vertices, inf)
+        level[node] = 0
+        parent = dict.fromkeys(self.vertices, None)
+        visited = {node, }
         i = 1
         frontier = [node]
         while frontier:
             nextfrontier = []
             for node in frontier:
                 for neighbor in self.adj(node):
-                    if neighbor not in level:
+                    if neighbor not in visited:
+                        visited.add(neighbor)
                         level[neighbor] = i
                         parent[neighbor] = node
                         nextfrontier.append(neighbor)
@@ -292,6 +318,7 @@ class Graph(object):
 
     @staticmethod
     def _return_zero(*_):
+        # default heuristic for a_star
         return 0
 
     # A* graph search algorithm
@@ -441,87 +468,96 @@ class Graph(object):
 
         return namedtuple("Shortest_Path", ["length", "parent"])(dist, parent)
 
+    # note that if the graph isn't connected, every eccentricity will be infinite
     def eccentricity(self, nodes=None):
-        # compute the eccentricity (that is, the length of the longest shortest path) of a node
-        # maybe save this data once it has been computed once to save of efficiency?
-        # optional input should be a list of nodes; if no list is given, compute all eccentricities
+        # don't recompute eccentricity unless we absolutely need to
+        if self._ecc is None:
+            # start by selecting the largest lower bound
+            high = False
 
-        # let v,w be nodes and let d = d(v,w).  then max(ecc(v)-d, d) <= ecc(w) <= ecc(v) + d.
-        #     If w is distance d from v, then it can go through v to get to any other node in ecc(v) steps, so we can
-        #     go from w to any other node in ecc(v) + d steps.
+            possibilities = self.vertices
 
-        #     supposed to select small lower bound, then large upper bound. ties are broken by taking nodes with the
-        #     highest degree
+            # ecc = dict.fromkeys(nodes, 0)
+            # are these initial bounds what they should be? Does it matter?
+            # if we have a connected graph G of order n, the min ecc would be 1 if G is K_n, and the max ecc would be
+            # n-1 if G is P_n (i.e. complete graph on n nodes and path on n nodes respectively)
+            lower = dict.fromkeys(possibilities, -inf)
+            upper = dict.fromkeys(possibilities, inf)
 
-        # start by selecting the largest lower bound
-        high = False
-
-        possibilities = nodes
-
-        ecc = dict.fromkeys(nodes, 0)
-        lower = dict.fromkeys(nodes, -inf)
-        upper = dict.fromkeys(nodes, inf)
-
-        # choose the first node as the node which has the highest degree
-        minlower = max(possibilities, key=lambda x: self.degree(x))
-        # maxupper won't be used in the first time through the loop, so make it None
-        maxupper = None
-
-        while possibilities:
-            if high:
-                promising = maxupper
-            else:
-                promising = minlower
-
-            high = not high
-
-            bfs = self.breadth_first_search(promising)
-            # compute eccentricity of promising node
-            # todo: I'll have to change how this is written once I fix shortest_path
-            ecc[promising] = max(bfs.level.values())
-
-            for node in possibilities:
-                lower[node] = max(lower[node], ecc[promising] - bfs.level[node], bfs.level[node])
-                upper[node] = min(upper[node], ecc[promising] + bfs.level[node])
-
-                if lower[node] == upper[node]:
-                    possibilities.remove(node)
-
-            minlower = None
+            # choose the first node as the node which has the highest degree
+            minlower = max(possibilities, key=lambda x: self.degree(x))
+            # maxupper won't be used in the first time through the loop, so make it None
             maxupper = None
 
-            for node in possibilities:
-                if minlower is None \
-                        or (lower[node] < lower[minlower]) \
-                        or (lower[node] == lower[minlower] and self.degree(node) > self.degree(minlower)):
-                    minlower = node
+            while possibilities:
+                if high:
+                    promising = maxupper
+                else:
+                    promising = minlower
 
-                if maxupper is None \
-                        or (upper[node] > upper[maxupper]) \
-                        or (upper[node] == upper[maxupper] and self.degree(node) > self.degree(maxupper)):
-                    maxupper = node
+                # as per Takes and Kosters, alternate between choosing node with the maximum upper bound and the node
+                # with the minimum lower bound.
+                high = not high
+
+                # is there a way to speed this up, instead of just doing a BFS from promising?
+                bfs = self.breadth_first_search(promising)
+                # compute eccentricity of promising node
+                # todo: I'll have to change how this is written once I rewrite shortest_path
+                ecc_promising = max(bfs.level.values())
+
+                for node in possibilities:
+                    lower[node] = max(lower[node], ecc_promising - bfs.level[node], bfs.level[node])
+                    upper[node] = min(upper[node], ecc_promising + bfs.level[node])
+
+                    # is there a good way to put a bound on how many nodes are removed every time through the loop?
+                    if lower[node] == upper[node]:
+                        possibilities.remove(node)
+
+                minlower = None
+                maxupper = None
+
+                # loop through the nodes remaining in possibilities and update minlower/maxupper.
+                # ties in bound are broken by selecting the node with the highest degree.
+                # can I combine this for loop with the previous for loop?  make it the else clause from the if statement
+                # that checks for removing nodes?
+                for node in possibilities:
+                    if minlower is None \
+                            or (lower[node] == lower[minlower] and self.degree(node) > self.degree(minlower)) \
+                            or (lower[node] < lower[minlower]):
+                        minlower = node
+
+                    if maxupper is None \
+                            or (upper[node] == upper[maxupper] and self.degree(node) > self.degree(maxupper)) \
+                            or (upper[node] > upper[maxupper]):
+                        maxupper = node
+            self._ecc = lower
+
+        if nodes is None:
+            ecc = self._ecc
+        else:
+            ecc = {node: self._ecc[node] for node in nodes}
 
         return ecc
 
-    # todo: write this
+    @property
     def radius(self):
         # min eccentricity
-        pass
+        return min(self.eccentricity().values())
 
-    # todo: write this
+    @property
     def diameter(self):
         # max eccentricity
-        pass
+        return max(self.eccentricity().values())
 
-    # todo: write this
+    @property
     def center(self):
         # those nodes whose eccentricity == radius
-        pass
+        return [node for node in self.vertices if self.eccentricity()[node] == self.radius]
 
-    # todo: write this
+    @property
     def periphery(self):
         # those nodes whose eccentricity == diameter
-        pass
+        return [node for node in self.vertices if self.eccentricity()[node] == self.diameter]
 
     # todo: write this
     def contract_edge(self, node1, node2):
