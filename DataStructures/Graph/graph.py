@@ -6,12 +6,11 @@ from DataStructures import PriorityQueue
 
 class Graph(object):
     # todo: ideally, you wouldn't have to specify a graph as weighted
-    # todo: make sure the new __init__ actually works with the rewritten adding nodes/edges
     # todo: should I have a separate class for digraph/multigraph?
-    # todo: add more features to make this more like networkx
     # todo: write code to be able to generate a graph from a function (implicitly generated graph)
+    # todo: fix kwargs wrt weight for adding edges
     #    i.e. define what a node looks like and define a function that generates an edge
-    def __init__(self, graph_data=None, weighted=False):
+    def __init__(self, graph_data=None, **kwargs):
 
         if graph_data is None:
             graph_data = {}
@@ -19,9 +18,11 @@ class Graph(object):
         self._adj = {}
         self._pred = {}
         self._weight = {}
+        self._node = {}
+        self._edge = {}
+        self.graph = {}
         self._ecc = None
-
-        self._weighted = weighted
+        self.graph.update(kwargs)
 
         # add vertices
         # for node in list(graph_data.keys()):
@@ -49,15 +50,61 @@ class Graph(object):
         # return the maximally connected subset of self.vertices
         # could compute the multiplicity of 0 as an eigenvalue of the Laplacean matrix of the graph
         # probably easier to just do DFS or BFS and see if everything is reached
-        pass
+
+        # do a BFS from the node with the max degree
+        connected_to_node = []
+        disconnected_from_node = []
+        node = max(self.vertices, key=self.degree)
+        discarded = []
+
+        # todo: figure out a better conditional for this
+        while len(connected_to_node) <= len(disconnected_from_node):
+            # get the levels of each node
+            bfs = self.breadth_first_search(node).level
+            # filter out the nodes that we've already checked
+            nodes = {vertex: bfs[vertex] for vertex in bfs if vertex not in discarded}
+            # partition set of nodes into connected and unconnected
+            connected_to_node = [node for node in nodes if nodes[node] < inf]
+            disconnected_from_node = [node for node in nodes if nodes[node] == inf]
+            # throw away the nodes that are connected, for the next pass through the loop
+            discarded.extend(connected_to_node)
+            # find the next node to search from
+            if len(disconnected_from_node) <= 0:
+                break
+            else:
+                node = max(disconnected_from_node, key=self.degree)
+
+        return connected_to_node
 
     @classmethod
-    def induced_subgraph(cls, graph, filter_nodes=None):
+    def subgraph(cls, graph, filter_nodes=None, filter_edges=None, **kwargs):
+        if filter_nodes is None:
+            pass
+        if filter_edges is None:
+            pass
+
+    @classmethod
+    def induced_subgraph(cls, graph, filter_nodes=None, **kwargs):
         # construct a new subgraph from `graph`, based on nodes that satisfy `filter`
         if filter_nodes is None:
             filter_nodes = Graph._maximally_connected
-        vertices = filter_nodes(graph.vertices)
-        pass
+
+        # get the vertices that we want still in the graph
+        vertices = filter_nodes(graph)
+
+        # get the edges that we want still in the graph
+        # could also just construct a duplicate graph and the remove every node not in vertices, but that would be slow
+        data = dict.fromkeys(vertices)
+        for node in data:
+
+            if graph.weighted:
+                # todo: make this list comprehension not a bleeping nightmare
+                data[node] = [(vertex, weight) for weight in graph.weight(node, vertex) for vertex in graph.adj(node) if
+                              vertex in vertices]
+            else:
+                data[node] = [vertex for vertex in graph.adj(node) if vertex in vertices]
+
+        return Graph(data, weighted=graph.weighted, kwargs=kwargs)
 
     def __contains__(self, item):
         return item in self._adj
@@ -67,6 +114,12 @@ class Graph(object):
 
     def __len__(self):
         return self.order
+
+    def __str__(self):
+        return self.graph.get("name", "Graph")
+
+    def __repr__(self):
+        return repr(self._adj)
 
     @property
     def vertices(self):
@@ -78,11 +131,15 @@ class Graph(object):
 
     @property
     def weighted(self):
-        return self._weighted
+        return self.graph.get("weighted", False)
 
     @property
     def order(self):
         return len(self.vertices)
+
+    @property
+    def name(self):
+        return self.graph.get("name", "Graph")
 
     # in an undirected graph, indegree(n) == outdegree(n)
     def degree(self, node):
@@ -133,22 +190,23 @@ class Graph(object):
         else:
             raise ValueError("No such edge {0}".format(repr((node1, node2))))
 
-    def add_nodes(self, nodes):
+    def add_nodes(self, nodes, **kwargs):
         for node in nodes:
-            self.add_node(node)
+            self.add_node(node, kwargs)
 
-    def add_node(self, node):
+    def add_node(self, node, **kwargs):
         # add an unconnected vertex to the graph
         if node not in self:
             self._adj[node] = []
             self._pred[node] = []
+            self._node[node].update(kwargs)
         else:
             raise ValueError("Node {0} already present in graph".format(repr(node)))
 
         self._ecc = None
 
     # add edges from an iterable.  elements of the iterable should be of the form (node1, node2, optional(weight))
-    def add_directed_edges(self, edges):
+    def add_directed_edges(self, edges, **kwargs):
         for edge in edges:
             try:
                 node1, node2, weight = edge
@@ -156,23 +214,27 @@ class Graph(object):
                 node1, node2 = edge
                 weight = None
 
-            self.add_directed_edge(node1, node2, weight)
+            self.add_directed_edge(node1, node2, kwargs=kwargs)
 
-    def add_directed_edge(self, node1, node2, weight=None):
+    def add_directed_edge(self, node1, node2, **kwargs):
         # add an edge between two vertices, node1 and node1, with optional weight
         for node in [node1, node2]:
             if node not in self:
                 raise ValueError("Node {0} not present in the graph".format(repr(node)))
         else:
+            # todo: might be able to modify this so that I don't need weight
             if self.weighted:
-                self._weight[(node1, node2)] = weight
+                self._weight[(node1, node2)] = kwargs.get("weight")
 
             self._adj[node1].append(node2)
             self._pred[node2].append(node1)
+            self._edge[(node1, node2)].update(kwargs)
 
         self._ecc = None
 
-    def add_undirected_edges(self, edges):
+    def add_undirected_edges(self, edges, **kwargs):
+        pass
+        # todo: update this wrt weight
         for edge in edges:
             try:
                 node1, node2, weight = edge
@@ -180,11 +242,11 @@ class Graph(object):
                 node1, node2 = edge
                 weight = None
 
-            self.add_undirected_edge(node1, node2, weight)
+            self.add_undirected_edge(node1, node2, kwargs=kwargs)
 
-    def add_undirected_edge(self, node1, node2, weight=None):
-        self.add_directed_edge(node1, node2, weight)
-        self.add_directed_edge(node2, node1, weight)
+    def add_undirected_edge(self, node1, node2, **kwargs):
+        self.add_directed_edge(node1, node2, kwargs=kwargs)
+        self.add_directed_edge(node2, node1, kwargs=kwargs)
 
     def remove_directed_edges(self, edges):
         for edge in edges:
