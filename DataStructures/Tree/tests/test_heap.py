@@ -43,6 +43,7 @@ class HeapTestCase(unittest.TestCase):
 
     @staticmethod
     def is_heap(heap):
+        # todo: rewrite so that it just takes a list, not a heap
         for i in range(0, len(heap)):
             for child in [heap._left, heap._right]:
                 # if child is None, we can skip it
@@ -94,7 +95,7 @@ class HeapTestCase(unittest.TestCase):
         for heap, name in self.nonempty:
             with self.subTest(heap=heap, name=name):
                 # extract everything from the heap!
-                root = deepcopy(heap.data[0])
+                root = deepcopy(heap.data[0])  # todo: rewrite this to choose min/max element
                 self.assertEqual(root, heap.extract())
 
                 heap.make_empty()

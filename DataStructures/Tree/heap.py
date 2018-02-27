@@ -802,7 +802,7 @@ class PriorityQueue(Heap):
                 self._bubbledown(index)
 
     def remove(self, item):
-        # todo: rewrite this.
+        # todo: rewrite this so that what you're removing swaps with last and then pop
         # Instead of using prioritized, just swap with last, pop _h, and compare the old last with its new parent.
         # If comp(old_last, parent) is true (i.e. old_last < parent), then bubbleup, else bubbledown.
         """

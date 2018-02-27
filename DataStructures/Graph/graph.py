@@ -99,7 +99,7 @@ class Graph(object):
 
             if graph.weighted:
                 # todo: make this list comprehension not a bleeping nightmare
-                data[node] = [(vertex, weight) for weight in graph.weight(node, vertex) for vertex in graph.adj(node) if
+                data[node] = [(vertex, weight) for vertex in graph.adj(node) for weight in graph.weight(node, vertex) if
                               vertex in vertices]
             else:
                 data[node] = [vertex for vertex in graph.adj(node) if vertex in vertices]
