@@ -414,8 +414,11 @@ class Heap(object):
         if self.is_empty():
             raise IndexError("Cannot extract from empty heap")
 
+        # save the item we're extracting
         toReturn = self._h[0]
+        # set the old root to the new item
         self._h[0] = item
+        # repair the heap
         self._bubbledown(0)
         return toReturn
 
