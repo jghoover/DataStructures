@@ -6,7 +6,7 @@ from DataStructures import PriorityQueue
 
 class Graph(object):
     # todo: ideally, you wouldn't have to specify a graph as weighted
-    # todo: should I have a separate class for digraph/multigraph?
+    # todo: should I have a separate class for digraph/multigraph? (yes, at least for digraph)
     # todo: write code to be able to generate a graph from a function (implicitly generated graph)
     # todo: fix kwargs wrt weight for adding edges
     #    i.e. define what a node looks like and define a function that generates an edge
@@ -199,6 +199,7 @@ class Graph(object):
         if node not in self:
             self._adj[node] = []
             self._pred[node] = []
+            self._node[node] = {}
             self._node[node].update(kwargs)
         else:
             raise ValueError("Node {0} already present in graph".format(repr(node)))
